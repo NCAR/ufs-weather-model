@@ -193,12 +193,16 @@ elif [[ $MACHINE_ID = hera.* ]]; then
   ECFLOW_START=/scratch2/NCEPDEV/fv3-cam/Dusan.Jovic/ecflow/bin/ecflow_start.sh
   ECF_PORT=$(( $(id -u) + 1500 ))
   QUEUE=debug
-#  ACCNR=fv3-cpu
+  ACCNR=gsienkf
   PARTITION=
   #
   # DTC baseline
   dprefix=/scratch1/BMC/gmtb
   DISKNM=$dprefix/ufs-weather-model/RT
+<<<<<<< HEAD
+  STMP=/scratch2/BMC/gsienkf
+  PTMP=/scratch2/BMC/gsienkf
+=======
   STMP=$dprefix
   PTMP=$dprefix
   # EMC baseline
@@ -207,6 +211,7 @@ elif [[ $MACHINE_ID = hera.* ]]; then
   #STMP=$dprefix/stmp4
   #PTMP=$dprefix/stmp2
   #
+>>>>>>> 2919f28a56fb3127fca33976c4840cad156be4d1
 
   SCHEDULER=slurm
   cp fv3_conf/fv3_slurm.IN_hera fv3_conf/fv3_slurm.IN
@@ -326,7 +331,7 @@ mkdir -p ${RUNDIR_ROOT}
 CREATE_BASELINE=false
 ROCOTO=false
 ECFLOW=false
-KEEP_RUNDIR=false
+KEEP_RUNDIR=true
 
 TESTS_FILE='rt.conf'
 # Switch to special regression test config on wcoss_cray:
