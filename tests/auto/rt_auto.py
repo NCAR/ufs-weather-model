@@ -11,9 +11,10 @@ import datetime
 import subprocess
 import re
 import os
+from glob import glob
 import logging
 import importlib
-
+from shutil import rmtree
 
 class GHInterface:
     '''
@@ -74,6 +75,79 @@ def set_action_from_label(machine, actions, label):
     logging.info(f'Compiler: {label_compiler}, Action: {action_match}')
     return label_compiler, action_match
 
+def delete_pr_dirs(each_pr, machine):
+    if machine == 'hera':                                                                                     
+        workdir = '/scratch1/NCEPDEV/nems/emc.nemspara/autort/pr'
+    elif machine == 'jet':
+        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
+    elif machine == 'gaea':
+        workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
+    elif machine == 'orion':
+        workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
+    elif machine == 'cheyenne':
+        workdir = '/glade/scratch/dswales/UFS/autort/tests/auto/pr'
+    else:
+        logging.error(f'Machine {machine} is not supported for this job')
+        raise KeyError
+    ids = [str(pr.id) for pr in each_pr]
+    logging.debug(f'ids are: {ids}')
+    dirs = [x.split('/')[-2] for x in glob(f'{workdir}/*/')]
+    logging.debug(f'dirs: {dirs}')
+    for dir in dirs:
+        if dir != 'pr':
+            logging.debug(f'Checking dir {dir}')
+            if not dir in ids:
+                logging.debug(f'ID NOT A MATCH, DELETING {dir}')
+                delete_rt_dirs(dir, machine, workdir)
+                if os.path.isdir(f'{workdir}/{dir}'):
+                    logging.debug(f'Executing rmtree in "{workdir}/{dir}"')
+                    rmtree(f'{workdir}/{dir}')
+                else:
+                    logging.debug(f'{workdir}/{dir} does not exist, not attempting to remove')
+            else:
+                logging.debug(f'ID A MATCH, NOT DELETING {dir}')
+    # job_obj.preq_dict["preq"].id
+    
+
+def delete_rt_dirs(in_dir, machine, workdir):
+    if machine == 'hera':                                                                                     
+        rt_dir ='/scratch1/NCEPDEV/stmp2/emc.nemspara/FV3_RT' 
+    elif machine == 'jet':
+        rt_dir ='/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
+               f'emc.nemspara/FV3_RT'
+    elif machine == 'gaea':
+        rt_dir = '/lustre/f2/scratch/emc.nemspara/FV3_RT'
+    elif machine == 'orion':
+        rt_dir = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT'
+    elif machine == 'cheyenne':
+        rt_dir = '/glade/scratch/dswales/UFS/dswales/FV3_RT/'
+    else:
+        logging.error(f'Machine {machine} is not supported for this job')
+        raise KeyError
+    globdir = f'{workdir}/{in_dir}/**/compile_*.log'
+    logging.debug(f'globdir: {globdir}')
+    logfiles = glob(globdir, recursive=True)
+    if not logfiles:
+      return
+    logging.debug(f'logfiles: {logfiles}')
+    matches = []
+    for logfile in logfiles:
+        with open(logfile, "r") as fp:
+            lines = [line.split('/') for line in fp if 'rt_' in line]
+            lines = list(set([item for sublist in lines for item in sublist]))
+            lines = [s for s in lines if 'rt_' in s and '\n' not in s]
+            if lines:
+                matches.append(lines)
+    logging.debug(f'lines: {lines}')
+    matches = list(set([item for sublist in matches for item in sublist]))
+    logging.debug(f'matches: {matches}')
+    for match in matches:
+        if os.path.isdir(f'{rt_dir}/{match}'):
+            logging.debug(f'Executing rmtree in "{rt_dir}/{match}"')
+            rmtree(f'{rt_dir}/{match}')
+        else:
+            logging.debug(f'{rt_dir}/{match} does not exist, not attempting to remove')
+
 
 def get_preqs_with_actions(repos, machine, ghinterface_obj, actions):
     ''' Create list of dictionaries of a pull request
@@ -84,6 +158,7 @@ def get_preqs_with_actions(repos, machine, ghinterface_obj, actions):
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
+    delete_pr_dirs(each_pr, machine)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
@@ -125,7 +200,7 @@ class Job:
         self.ghinterface_obj = ghinterface_obj
         self.machine = machine
         self.compiler = compiler
-        self.comment_text = ''
+        self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
 
     def comment_text_append(self, newtext):
@@ -193,8 +268,8 @@ class Job:
         logger = logging.getLogger('JOB/SEND_COMMENT_TEXT')
         logger.info(f'Comment Text: {self.comment_text}')
         self.comment_text_append('Please make changes and add '
-                                 'the following label back:')
-        self.comment_text_append(f'{self.machine}'
+                                 'the following label back: '
+                                 f'{self.machine}'
                                  f'-{self.compiler}'
                                  f'-{self.preq_dict["action"]}')
 
@@ -217,6 +292,9 @@ def setup_env():
     elif bool(re.match(re.compile('fe.+'), hostname)):
         machine = 'jet'
         os.environ['ACCNR'] = 'h-nems'
+    elif bool(re.match(re.compile('tfe.+'), hostname)):
+        machine = 'jet'
+        os.environ['ACCNR'] = 'h-nems'
     elif bool(re.match(re.compile('gaea.+'), hostname)):
         machine = 'gaea'
         os.environ['ACCNR'] = 'nggps_emc'
@@ -232,7 +310,7 @@ def setup_env():
     # Dictionary of GitHub repositories to check
     repo_dict = [{
         'name': 'ufs-weather-model',
-        'address': 'ufs-community/ufs-weather-model',
+        'address': 'dustinswales/ufs-weather-model',
         'base': 'develop'
     }]
 
@@ -247,8 +325,10 @@ def main():
     # handle logging
     log_filename = f'rt_auto_'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.log'
+    #logging.basicConfig(filename=log_filename, filemode='w',
+    #                    level=logging.INFO)
     logging.basicConfig(filename=log_filename, filemode='w',
-                        level=logging.INFO)
+                        level=logging.DEBUG)
     logger = logging.getLogger('MAIN')
     logger.info('Starting Script')
 
