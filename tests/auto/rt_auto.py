@@ -76,8 +76,8 @@ def set_action_from_label(machine, actions, label):
     return label_compiler, action_match
 
 def delete_pr_dirs(each_pr, machine):
-    if machine == 'hera':                                                                                     
-        workdir = '/scratch1/NCEPDEV/nems/emc.nemspara/autort/pr'
+    if machine == 'hera':
+        workdir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/auto-RT/Pull_Requests'
     elif machine == 'jet':
         workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
     elif machine == 'gaea':
@@ -110,8 +110,8 @@ def delete_pr_dirs(each_pr, machine):
     
 
 def delete_rt_dirs(in_dir, machine, workdir):
-    if machine == 'hera':                                                                                     
-        rt_dir ='/scratch1/NCEPDEV/stmp2/emc.nemspara/FV3_RT' 
+    if machine == 'hera':
+        rt_dir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/stmp2/Dustin.Swales/FV3_RT'
     elif machine == 'jet':
         rt_dir ='/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
                f'emc.nemspara/FV3_RT'

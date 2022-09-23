@@ -19,7 +19,7 @@ def run(job_obj):
 def set_directories(job_obj):
     logger = logging.getLogger('BL/SET_DIRECTORIES')
     if job_obj.machine == 'hera':
-        workdir = '/scratch1/NCEPDEV/nems/emc.nemspara/autort/pr'
+        workdir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/auto-RT/Pull_Requests'
         blstore = '/scratch1/NCEPDEV/nems/emc.nemspara/RT/NEMSfv3gfs'
         rtbldir = '/scratch1/NCEPDEV/stmp4/emc.nemspara/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
@@ -140,9 +140,9 @@ def clone_pr_repo(job_obj, workdir):
         [f'git clone -b {branch} {git_ssh_url}', repo_dir_str],
         ['git submodule update --init --recursive',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.email "dustin.swales@noaa.gov"',
+        ['git config user.email "dswales@ucar.edu"',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.name "Dustin Swales"',
+        ['git config user.name "dustinswales"',
          f'{repo_dir_str}/{repo_name}']
     ]
 
