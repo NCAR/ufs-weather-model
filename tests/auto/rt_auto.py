@@ -310,8 +310,8 @@ def setup_env():
     # Dictionary of GitHub repositories to check
     repo_dict = [{
         'name': 'ufs-weather-model',
-        'address': 'dustinswales/ufs-weather-model',
-        'base': 'develop'
+        'address': 'NCAR/ufs-weather-model',
+        'base': 'main'
     }]
 
     # Approved Actions
