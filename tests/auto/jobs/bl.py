@@ -10,7 +10,7 @@ def run(job_obj):
     workdir, rtbldir, blstore = set_directories(job_obj)
     pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj, workdir)
     bldate = get_bl_date(job_obj, pr_repo_loc)
-    bldir = f'{blstore}/develop-{bldate}/{job_obj.compiler.upper()}'
+    bldir = f'{blstore}/main-{bldate}/{job_obj.compiler.upper()}'
     bldirbool = check_for_bl_dir(bldir, job_obj)
     run_regression_test(job_obj, pr_repo_loc)
     post_process(job_obj, pr_repo_loc, repo_dir_str, rtbldir, bldir, bldate, blstore)
@@ -19,29 +19,14 @@ def run(job_obj):
 def set_directories(job_obj):
     logger = logging.getLogger('BL/SET_DIRECTORIES')
     if job_obj.machine == 'hera':
-        workdir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/auto-RT/Pull_Requests'
-        blstore = '/scratch1/NCEPDEV/nems/emc.nemspara/RT/NEMSfv3gfs'
-        rtbldir = '/scratch1/NCEPDEV/stmp4/emc.nemspara/FV3_RT/'\
-                 f'REGRESSION_TEST_{job_obj.compiler.upper()}'
-    elif job_obj.machine == 'jet':
-        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
-        blstore = '/lfs4/HFIP/h-nems/emc.nemspara/RT/NEMSfv3gfs/'
-        rtbldir = '/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
-                 f'emc.nemspara/FV3_RT/REGRESSION_TEST_{job_obj.compiler.upper()}'
-    elif job_obj.machine == 'gaea':
-        workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
-        blstore = '/lustre/f2/pdata/ncep_shared/emc.nemspara/RT/NEMSfv3gfs'
-        rtbldir = '/lustre/f2/scratch/emc.nemspara/FV3_RT/'\
-                 f'REGRESSION_TEST_{job_obj.compiler.upper()}'
-    elif job_obj.machine == 'orion':
-        workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
-        blstore = '/work/noaa/nems/emc.nemspara/RT/NEMSfv3gfs'
-        rtbldir = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT/'\
+        workdir = '/scratch1/BMC/gmtb/RT/auto_RT/Pull_Requests'
+        blstore = '/scratch1/BMC/gmtb/RT/NCAR'
+        rtbldir = '/scratch1/BMC/gmtb/RT/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif job_obj.machine == 'cheyenne':
-        workdir = '/glade/scratch/dswales/UFS/autort/tests/auto/pr'
-        blstore = '/glade/p/ral/jntp/GMTB/ufs-weather-model/RT/NEMSfv3gfs'
-        rtbldir = '/glade/scratch/dswales/UFS/dswales/FV3_RT/'\
+        workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
+        blstore = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/NCAR'
+        rtbldir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     else:
         logger.critical(f'Machine {job_obj.machine} is not supported for this job')
@@ -102,11 +87,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -c -l rt_gnu.conf',
+                       '&& /bin/bash --login ./rt.ncar.sh -e -c -l rt_gnu.conf',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -c', pr_repo_loc]]
+                       '&& /bin/bash --login ./rt.ncar.sh -e -c', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -169,9 +154,9 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, rtbldir, bldir, bldate, bls
 
 
 def get_bl_date(job_obj, pr_repo_loc):
-    logger = logging.getLogger('BL/UPDATE_RT_SH')
+    logger = logging.getLogger('BL/UPDATE_RT_NCAR_SH')
     BLDATEFOUND = False
-    with open(f'{pr_repo_loc}/tests/rt.sh', 'r') as f:
+    with open(f'{pr_repo_loc}/tests/rt.ncar.sh', 'r') as f:
         for line in f:
             if 'BL_DATE=' in line:
                 logger.info('Found BL_DATE in line')
@@ -189,7 +174,7 @@ def get_bl_date(job_obj, pr_repo_loc):
                     logger.info(f'Date {bldate} is not formatted YYYYMMDD')
                     raise ValueError
     if not BLDATEFOUND:
-        job_obj.comment_text_append('[BL] ERROR: Variable "BL_DATE" not found in rt.sh.')
+        job_obj.comment_text_append('[BL] ERROR: Variable "BL_DATE" not found in rt.ncar.sh.')
         job_obj.job_failed(logger, 'get_bl_date()')
     logger.info('Finished get_bl_date')
 

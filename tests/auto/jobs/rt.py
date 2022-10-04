@@ -15,15 +15,9 @@ def run(job_obj):
 def set_directories(job_obj):
     logger = logging.getLogger('RT/SET_DIRECTORIES')
     if job_obj.machine == 'hera':
-        workdir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/auto-RT/Pull_Requests'
-    elif job_obj.machine == 'jet':
-        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
-    elif job_obj.machine == 'gaea':
-        workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
-    elif job_obj.machine == 'orion':
-        workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
+        workdir = '/scratch1/BMC/gmtb/RT/auto_RT/Pull_Requests'
     elif job_obj.machine == 'cheyenne':
-        workdir = '/glade/scratch/dswales/UFS/autort/tests/auto/pr'
+        workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
     else:
         print(f'Machine {job_obj.machine} is not supported for this job')
         raise KeyError
@@ -38,11 +32,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('RT/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -l rt_gnu.conf',
+                       '&& /bin/bash --login ./rt.ncar.sh -e -l rt_gnu.conf',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e', pr_repo_loc]]
+                       '&& /bin/bash --login ./rt.ncar.sh -e', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -100,7 +94,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
             [f'git add {rt_log}', pr_repo_loc],
             [f'git commit -m "[AutoRT] {job_obj.machine}'
              f'.{job_obj.compiler} Job Completed.\n\n\n'
-              'on-behalf-of @ufs-community <dswales@ucar.edu>"',
+              'on-behalf-of @NCAR <dswales@ucar.edu>"',
              pr_repo_loc],
             ['sleep 10', pr_repo_loc],
             [f'git push origin {branch}', pr_repo_loc]
