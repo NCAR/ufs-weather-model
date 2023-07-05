@@ -6,26 +6,9 @@ import os
 
 def run(job_obj):
     logger = logging.getLogger('RT/RUN')
-    workdir = set_directories(job_obj)
-    branch, pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj, workdir)
+    branch, pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj)
     run_regression_test(job_obj, pr_repo_loc)
     post_process(job_obj, pr_repo_loc, repo_dir_str, branch)
-
-
-def set_directories(job_obj):
-    logger = logging.getLogger('RT/SET_DIRECTORIES')
-    if job_obj.machine == 'hera':
-        workdir = '/scratch1/BMC/gmtb/RT/auto_RT/Pull_Requests'
-    elif job_obj.machine == 'cheyenne':
-        workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
-    else:
-        print(f'Machine {job_obj.machine} is not supported for this job')
-        raise KeyError
-
-    logger.info(f'machine: {job_obj.machine}')
-    logger.info(f'workdir: {workdir}')
-
-    return workdir
 
 
 def run_regression_test(job_obj, pr_repo_loc):
@@ -49,7 +32,7 @@ def remove_pr_data(job_obj, pr_repo_loc, repo_dir_str, rt_dir):
     job_obj.run_commands(logger, rm_command)
 
 
-def clone_pr_repo(job_obj, workdir):
+def clone_pr_repo(job_obj):
     ''' clone the GitHub pull request repo, via command line '''
     logger = logging.getLogger('RT/CLONE_PR_REPO')
     repo_name = job_obj.preq_dict['preq'].head.repo.name
@@ -58,7 +41,7 @@ def clone_pr_repo(job_obj, workdir):
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
-    repo_dir_str = f'{workdir}/'\
+    repo_dir_str = f'{job_obj.workdir}/'\
                    f'{str(job_obj.preq_dict["preq"].id)}/'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}'
     pr_repo_loc = f'{repo_dir_str}/{repo_name}'
@@ -68,9 +51,9 @@ def clone_pr_repo(job_obj, workdir):
         [f'git clone -b {branch} {git_ssh_url}', repo_dir_str],
         ['git submodule update --init --recursive',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.email "dswales@ucar.edu"',
+        ['git config user.email "kavulich@ucar.edu"',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.name "dustinswales"',
+        ['git config user.name "mkavulich"',
          f'{repo_dir_str}/{repo_name}']
     ]
 
@@ -94,7 +77,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
             [f'git add {rt_log}', pr_repo_loc],
             [f'git commit -m "[AutoRT] {job_obj.machine}'
              f'.{job_obj.compiler} Job Completed.\n\n\n'
-              'on-behalf-of @NCAR <dswales@ucar.edu>"',
+              'on-behalf-of @NCAR <kavulich@ucar.edu>"',
              pr_repo_loc],
             ['sleep 10', pr_repo_loc],
             [f'git push origin {branch}', pr_repo_loc]

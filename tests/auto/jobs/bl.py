@@ -125,9 +125,9 @@ def clone_pr_repo(job_obj, workdir):
         [f'git clone -b {branch} {git_ssh_url}', repo_dir_str],
         ['git submodule update --init --recursive',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.email "dswales@ucar.edu"',
+        ['git config user.email "kavulich@ucar.edu"',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.name "dustinswales"',
+        ['git config user.name "mkavulich"',
          f'{repo_dir_str}/{repo_name}']
     ]
 
