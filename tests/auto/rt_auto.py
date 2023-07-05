@@ -7,6 +7,7 @@ This script should be started through rt_auto.sh so that env vars are set up
 prior to start.
 """
 from github import Github as gh
+import argparse
 import datetime
 import subprocess
 import re
@@ -75,20 +76,7 @@ def set_action_from_label(machine, actions, label):
     logging.info(f'Compiler: {label_compiler}, Action: {action_match}')
     return label_compiler, action_match
 
-def delete_pr_dirs(each_pr, machine):
-    if machine == 'hera':
-        workdir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/auto-RT/Pull_Requests'
-    elif machine == 'jet':
-        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
-    elif machine == 'gaea':
-        workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
-    elif machine == 'orion':
-        workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
-    elif machine == 'cheyenne':
-        workdir = '/glade/scratch/dswales/UFS/autort/tests/auto/pr'
-    else:
-        logging.error(f'Machine {machine} is not supported for this job')
-        raise KeyError
+def delete_pr_dirs(each_pr, machine, workdir):
     ids = [str(pr.id) for pr in each_pr]
     logging.debug(f'ids are: {ids}')
     dirs = [x.split('/')[-2] for x in glob(f'{workdir}/*/')]
@@ -110,20 +98,6 @@ def delete_pr_dirs(each_pr, machine):
     
 
 def delete_rt_dirs(in_dir, machine, workdir):
-    if machine == 'hera':
-        rt_dir = '/scratch1/BMC/gmtb/Dustin.Swales/UFS/stmp2/Dustin.Swales/FV3_RT'
-    elif machine == 'jet':
-        rt_dir ='/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
-               f'emc.nemspara/FV3_RT'
-    elif machine == 'gaea':
-        rt_dir = '/lustre/f2/scratch/emc.nemspara/FV3_RT'
-    elif machine == 'orion':
-        rt_dir = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT'
-    elif machine == 'cheyenne':
-        rt_dir = '/glade/scratch/dswales/UFS/dswales/FV3_RT/'
-    else:
-        logging.error(f'Machine {machine} is not supported for this job')
-        raise KeyError
     globdir = f'{workdir}/{in_dir}/**/compile_*.log'
     logging.debug(f'globdir: {globdir}')
     logfiles = glob(globdir, recursive=True)
@@ -149,7 +123,7 @@ def delete_rt_dirs(in_dir, machine, workdir):
             logging.debug(f'{rt_dir}/{match} does not exist, not attempting to remove')
 
 
-def get_preqs_with_actions(repos, machine, ghinterface_obj, actions):
+def get_preqs_with_actions(repos, machine, workdir, ghinterface_obj, actions):
     ''' Create list of dictionaries of a pull request
         and its machine label and action '''
     logger = logging.getLogger('GET_PREQS_WITH_ACTIONS')
@@ -158,7 +132,7 @@ def get_preqs_with_actions(repos, machine, ghinterface_obj, actions):
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
-    delete_pr_dirs(each_pr, machine)
+    delete_pr_dirs(each_pr, machine, workdir)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
@@ -170,7 +144,7 @@ def get_preqs_with_actions(repos, machine, ghinterface_obj, actions):
         if match:
             pr_label['action'] = match
             # return_preq.append(pr_label.copy())
-            jobs.append(Job(pr_label.copy(), ghinterface_obj, machine, compiler))
+            jobs.append(Job(pr_label.copy(), ghinterface_obj, machine, compiler, workdir))
 
     return jobs
 
@@ -192,7 +166,7 @@ class Job:
         provided by the bash script
     '''
 
-    def __init__(self, preq_dict, ghinterface_obj, machine, compiler):
+    def __init__(self, preq_dict, ghinterface_obj, machine, compiler, workdir):
         self.logger = logging.getLogger('JOB')
         self.preq_dict = preq_dict
         self.job_mod = importlib.import_module(
@@ -200,6 +174,7 @@ class Job:
         self.ghinterface_obj = ghinterface_obj
         self.machine = machine
         self.compiler = compiler
+        self.workdir = workdir
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
 
@@ -209,7 +184,7 @@ class Job:
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
         self.logger.info(f'Removing Label: {self.preq_dict["label"]}')
-        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
+#        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
 
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
@@ -260,7 +235,7 @@ class Job:
             except Exception:
                 self.job_failed(logger, 'run()')
                 logger.info('Sending comment text')
-                self.send_comment_text()
+#                self.send_comment_text()
         else:
             logger.info(f'Cannot find label {self.preq_dict["label"]}')
 
@@ -283,41 +258,18 @@ class Job:
             logger.critical(f'STDOUT: {[item for item in out if not None]}')
             logger.critical(f'STDERR: {[eitem for eitem in err if not None]}')
 
-def setup_env():
-    hostname = os.getenv('HOSTNAME')
-    if bool(re.match(re.compile('hfe.+'), hostname)):
-        machine = 'hera'
-    elif bool(re.match(re.compile('hecflow.+'), hostname)):
-        machine = 'hera'
-    elif bool(re.match(re.compile('fe.+'), hostname)):
-        machine = 'jet'
-        os.environ['ACCNR'] = 'h-nems'
-    elif bool(re.match(re.compile('tfe.+'), hostname)):
-        machine = 'jet'
-        os.environ['ACCNR'] = 'h-nems'
-    elif bool(re.match(re.compile('gaea.+'), hostname)):
-        machine = 'gaea'
-        os.environ['ACCNR'] = 'nggps_emc'
-    elif bool(re.match(re.compile('Orion-login.+'), hostname)):
-        machine = 'orion'
-    elif bool(re.match(re.compile('chadmin.+'), hostname)):
-        machine = 'cheyenne'
-        os.environ['ACCNR'] = 'P48503002'
-    else:
-        raise KeyError(f'Hostname: {hostname} does not match '\
-                        'for a supported system. Exiting.')
-
+def setup_env(name='ufs-weather-model', address='NCAR/ufs-weather-model', base='main'):
     # Dictionary of GitHub repositories to check
     repo_dict = [{
-        'name': 'ufs-weather-model',
-        'address': 'NCAR/ufs-weather-model',
-        'base': 'main'
+        'name': name,
+        'address': address,
+        'base': base
     }]
 
     # Approved Actions
     action_list = ['RT', 'BL']
 
-    return machine, repo_dict, action_list
+    return repo_dict, action_list
 
 
 def main():
@@ -332,9 +284,20 @@ def main():
     logger = logging.getLogger('MAIN')
     logger.info('Starting Script')
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m','--machine', help='current machine name', required=True)
+    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=True)
+    args = parser.parse_args()
+
+    machine = args.machine
+    workdir = args.workdir
+
+    logger.info(f'Machine: {machine}')
+    logger.info(f'Working directory: {workdir}')
+
     # setup environment
     logger.info('Getting the environment setup')
-    machine, repos, actions = setup_env()
+    repos, actions = setup_env()
 
     # setup interface with GitHub
     logger.info('Setting up GitHub interface.')
@@ -344,7 +307,7 @@ def main():
     # and turn them into Job objects
     logger.info('Getting all pull requests, '
                 'labels and actions applicable to this machine.')
-    jobs = get_preqs_with_actions(repos, machine,
+    jobs = get_preqs_with_actions(repos, machine, workdir,
                                        ghinterface_obj, actions)
     [job.run() for job in jobs]
 
