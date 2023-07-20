@@ -141,7 +141,7 @@ TESTS_FILE='rt.conf'
 
 SKIP_ORDER=false
 
-while getopts "a:cl:mn:dw:krepsh" opt; do
+while getopts "a:cl:mn:dw:krep:sh" opt; do
   case $opt in
     a)
       ACCNR=$OPTARG
