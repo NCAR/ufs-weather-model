@@ -139,20 +139,44 @@ export delete_rundir=false
 
 TESTS_FILE='rt.conf'
 
-while getopts ":cl:mn:dw:krepsh" opt; do
+SKIP_ORDER=false
+
+while getopts "a:cl:mn:dw:krepsh" opt; do
   case $opt in
+    a)
+      ACCNR=$OPTARG
+      ;;
     c)
       CREATE_BASELINE=true
       ;;
     l)
       TESTS_FILE=$OPTARG
+      SKIP_ORDER=true
       ;;
     m)
       # redefine RTPWD to point to newly created baseline outputs
       RTPWD=${NEW_BASELINE}
       ;;
     n)
-      SINGLE_NAME=$OPTARG
+      SINGLE_OPTS=("$OPTARG")
+      until [[ $(eval "echo \${$OPTIND}") =~ ^-.* ]] || [ -z $(eval "echo \${$OPTIND}") ]; do
+        SINGLE_OPTS+=($(eval "echo \${$OPTIND}"))
+        OPTIND=$((OPTIND + 1))
+      done
+
+      if [[ ${#SINGLE_OPTS[@]} != 2 ]]; then
+        echo "The -n option needs <testname> AND <compiler>, i.e. -n control_p8 intel"
+        exit 1
+      fi
+      SINGLE_NAME=${SINGLE_OPTS[0],,}
+      export RT_COMPILER=${SINGLE_OPTS[1],,}
+
+      if [[ "$RT_COMPILER" == "intel" ]] || [[ "$RT_COMPILER" == "gnu" ]]; then
+        echo "COMPILER set to ${RT_COMPILER}"
+      else
+        echo "Compiler must be either 'intel' or 'gnu'."
+        exit 1
+      fi
       ;;
     d)
       export delete_rundir=true
@@ -191,9 +215,6 @@ while getopts ":cl:mn:dw:krepsh" opt; do
       ;;
   esac
 done
-
-# Default compiler "intel"
-export RT_COMPILER=${RT_COMPILER:-intel}
 
 source rt_utils.sh
 source module-setup.sh
@@ -369,7 +390,6 @@ elif [[ $MACHINE_ID = hera ]]; then
   QUEUE=batch
   COMPILE_QUEUE=batch
 
-  ACCNR=gmtb
   PARTITION=
   dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
   DISKNM=$dprefix/RT
@@ -455,7 +475,6 @@ elif [[ $MACHINE_ID = cheyenne ]]; then
   ECFLOW_START=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/bin/ecflow_start.sh
   ECF_PORT=$(( $(id -u) + 1500 ))
 
-  ACCNR=P48503002
   QUEUE=regular
   COMPILE_QUEUE=regular
   PARTITION=
@@ -515,10 +534,6 @@ elif [[ $MACHINE_ID = noaacloud.* ]]; then
 else
   die "Unknown machine ID, please edit detect_machine.sh file"
 fi
-
-# If account is unspecified, assume the machine has a "nems"
-# accounting code.
-export ACCNR="${ACCNR:-nems}"
 
 # Display the machine and account
 echo "Machine: " $MACHINE_ID "    Account: " $ACCNR
