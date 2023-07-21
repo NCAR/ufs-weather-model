@@ -605,19 +605,19 @@ suite ${ECFLOW_SUITE}
     limit max_jobs ${MAX_JOBS}
 EOF
 
-  if [[ $MACHINE_ID = wcoss2 || $MACHINE_ID = acorn ]]; then
+  if [[ $MACHINE_ID = wcoss2.* || $MACHINE_ID = acorn.* ]]; then
     QUEUE=dev
-  elif [[ $MACHINE_ID = hera ]]; then
+  elif [[ $MACHINE_ID = hera.* ]]; then
     QUEUE=batch
-  elif [[ $MACHINE_ID = orion ]]; then
+  elif [[ $MACHINE_ID = orion.* ]]; then
     QUEUE=batch
-  elif [[ $MACHINE_ID = jet ]]; then
+  elif [[ $MACHINE_ID = jet.* ]]; then
     QUEUE=batch
-  elif [[ $MACHINE_ID = s4 ]]; then
+  elif [[ $MACHINE_ID = s4.* ]]; then
     QUEUE=s4
-  elif [[ $MACHINE_ID = gaea ]]; then
+  elif [[ $MACHINE_ID = gaea.* ]]; then
     QUEUE=normal
-  elif [[ $MACHINE_ID = cheyenne ]]; then
+  elif [[ $MACHINE_ID = cheyenne.* ]]; then
     QUEUE=regular
   else
     die "ecFlow is not supported on this machine $MACHINE_ID"
@@ -625,7 +625,7 @@ EOF
 
 else
 
-  if [[ $MACHINE_ID = hera ]] && [[ $HOSTNAME = hecflow ]]; then
+  if [[ $MACHINE_ID = hera.* ]] && [[ $HOSTNAME = hecflow ]]; then
     echo "ERROR: To run without using ECFlow on Hera, please do not use ecflow node."
     exit 1
   fi
