@@ -228,8 +228,8 @@ class Job:
         self.comment_text_append(f'Job: {self.preq_dict["action"]}')
         if self.check_label_before_job_start():
             try:
-#                logger.info('Calling remove_pr_label')
-#                self.remove_pr_label()
+                logger.info('Calling remove_pr_label')
+                self.remove_pr_label()
                 logger.info('Calling Job to Run')
                 self.job_mod.run(self)
             except Exception:
