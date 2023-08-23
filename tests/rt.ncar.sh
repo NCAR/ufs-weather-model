@@ -301,6 +301,7 @@ elif [[ $MACHINE_ID = hera.* ]]; then
   COMPILE_QUEUE=batch
 
   PARTITION=
+  INPUT_DATE=20230314
   dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
   DISKNM=$dprefix/RT
   STMP=$dprefix/RT/stmp4
@@ -388,10 +389,11 @@ elif [[ $MACHINE_ID = cheyenne.* ]]; then
   QUEUE=regular
   COMPILE_QUEUE=regular
   PARTITION=
-  dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
-  DISKNM=$dprefix
-  STMP=$dprefix
-  PTMP=$dprefix
+  INPUT_DATE=20221101
+  dprefix=${dprefix:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/}
+  DISKNM=$dprefix/RT
+  STMP=$dprefix/RT
+  PTMP=$dprefix/RT
   SCHEDULER=pbs
 
 elif [[ $MACHINE_ID = stampede.* ]]; then
