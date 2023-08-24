@@ -219,7 +219,7 @@ done
 source rt_utils.sh
 source module-setup.sh
 
-if [[ $MACHINE_ID = wcoss2.* ]]; then
+if [[ $MACHINE_ID = wcoss2 ]]; then
 
   #module use /usrx/local/dev/emc_rocoto/modulefiles
   #module load ruby/2.5.1 rocoto/1.3.0rc2
@@ -246,7 +246,7 @@ if [[ $MACHINE_ID = wcoss2.* ]]; then
   PTMP=/lfs/h2/emc/ptmp
   SCHEDULER=pbs
 
-elif [[ $MACHINE_ID = acorn.* ]]; then
+elif [[ $MACHINE_ID = acorn ]]; then
 
   module load ecflow/5.6.0.13
   module load gcc/10.3.0 python/3.8.6
@@ -266,7 +266,7 @@ elif [[ $MACHINE_ID = acorn.* ]]; then
   PTMP=/lfs/h2/emc/ptmp
   SCHEDULER=pbs
 
-elif [[ $MACHINE_ID = gaea.* ]]; then
+elif [[ $MACHINE_ID = gaea ]]; then
 
   export PATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/bin:/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/bin:$PATH
   export PYTHONPATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/lib/python3.8/site-packages
@@ -282,7 +282,7 @@ elif [[ $MACHINE_ID = gaea.* ]]; then
 
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = hera.* ]]; then
+elif [[ $MACHINE_ID = hera ]]; then
 
   module load rocoto
   ROCOTORUN=$(which rocotorun)
@@ -309,7 +309,7 @@ elif [[ $MACHINE_ID = hera.* ]]; then
 
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = orion.* ]]; then
+elif [[ $MACHINE_ID = orion ]]; then
 
   module load gcc/8.3.0
 
@@ -332,7 +332,7 @@ elif [[ $MACHINE_ID = orion.* ]]; then
 
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = jet.* ]]; then
+elif [[ $MACHINE_ID = jet ]]; then
 
   module load rocoto/1.3.2
   ROCOTORUN=$(which rocotorun)
@@ -355,7 +355,7 @@ elif [[ $MACHINE_ID = jet.* ]]; then
 
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = s4.* ]]; then
+elif [[ $MACHINE_ID = s4 ]]; then
 
   module load rocoto/1.3.2
   module load ecflow/5.6.0
@@ -379,7 +379,7 @@ elif [[ $MACHINE_ID = s4.* ]]; then
 
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = cheyenne.* ]]; then
+elif [[ $MACHINE_ID = cheyenne ]]; then
 
   export PATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/bin:/glade/p/ral/jntp/tools/miniconda3/4.8.3/bin:$PATH
   export PYTHONPATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/glade/p/ral/jntp/tools/miniconda3/4.8.3/lib/python3.8/site-packages
@@ -396,7 +396,7 @@ elif [[ $MACHINE_ID = cheyenne.* ]]; then
   PTMP=$dprefix/RT
   SCHEDULER=pbs
 
-elif [[ $MACHINE_ID = stampede.* ]]; then
+elif [[ $MACHINE_ID = stampede ]]; then
 
   export PYTHONPATH=
   ECFLOW_START=
@@ -411,7 +411,7 @@ elif [[ $MACHINE_ID = stampede.* ]]; then
   MPIEXEC=ibrun
   MPIEXECOPTS=
 
-elif [[ $MACHINE_ID = expanse.* ]]; then
+elif [[ $MACHINE_ID = expanse ]]; then
 
   export PYTHONPATH=
   ECFLOW_START=
@@ -424,7 +424,7 @@ elif [[ $MACHINE_ID = expanse.* ]]; then
   PTMP=$dprefix
   SCHEDULER=slurm
 
-elif [[ $MACHINE_ID = noaacloud.* ]]; then
+elif [[ $MACHINE_ID = noaacloud ]]; then
 
   module use /apps/modules/modulefiles
   module load rocoto/1.3.3
