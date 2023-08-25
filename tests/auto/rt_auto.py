@@ -123,7 +123,7 @@ def delete_rt_dirs(in_dir, machine, workdir):
             logging.debug(f'{rt_dir}/{match} does not exist, not attempting to remove')
 
 
-def get_preqs_with_actions(repos, machine, workdir, ghinterface_obj, actions):
+def get_preqs_with_actions(repos, machine, account, workdir, ghinterface_obj, actions):
     ''' Create list of dictionaries of a pull request
         and its machine label and action '''
     logger = logging.getLogger('GET_PREQS_WITH_ACTIONS')
@@ -144,7 +144,7 @@ def get_preqs_with_actions(repos, machine, workdir, ghinterface_obj, actions):
         if match:
             pr_label['action'] = match
             # return_preq.append(pr_label.copy())
-            jobs.append(Job(pr_label.copy(), ghinterface_obj, machine, compiler, workdir))
+            jobs.append(Job(pr_label.copy(), ghinterface_obj, machine, account, compiler, workdir))
 
     return jobs
 
@@ -166,13 +166,14 @@ class Job:
         provided by the bash script
     '''
 
-    def __init__(self, preq_dict, ghinterface_obj, machine, compiler, workdir):
+    def __init__(self, preq_dict, ghinterface_obj, machine, account, compiler, workdir):
         self.logger = logging.getLogger('JOB')
         self.preq_dict = preq_dict
         self.job_mod = importlib.import_module(
                        f'jobs.{self.preq_dict["action"].lower()}')
         self.ghinterface_obj = ghinterface_obj
         self.machine = machine
+        self.account = account
         self.compiler = compiler
         self.workdir = workdir
         self.comment_text = '***Automated RT Failure Notification***\n'
@@ -184,7 +185,7 @@ class Job:
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
         self.logger.info(f'Removing Label: {self.preq_dict["label"]}')
-        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
+#        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
 
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
@@ -284,12 +285,14 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-m','--machine', help='current machine name', required=True)
+    parser.add_argument('-a','--account', help='account to charge', required=True)
     parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False)
     parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
 
     args = parser.parse_args()
 
     machine = args.machine
+    account = args.account
     workdir = args.workdir
 
     if args.debug:
@@ -312,7 +315,7 @@ def main():
     # and turn them into Job objects
     logger.info('Getting all pull requests, '
                 'labels and actions applicable to this machine.')
-    jobs = get_preqs_with_actions(repos, machine, workdir,
+    jobs = get_preqs_with_actions(repos, machine, account, workdir,
                                        ghinterface_obj, actions)
     [job.run() for job in jobs]
 

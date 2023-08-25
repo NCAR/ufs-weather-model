@@ -8,13 +8,14 @@ function usage {
     echo "  workdir: Working directory for checking out and running tests"
     exit 1
 }
-if [ "$#" -lt 2 ]; then
-    echo "Need to provide machine and workdir"
+if [ "$#" -lt 3 ]; then
+    echo "Need to provide machine, account, and workdir"
     usage
 fi
 
 machine=$1
-workdir=$2
+account=$2
+workdir=$3
 
 if [[ $machine == hera ]]; then
   export PATH=/scratch1/NCEPDEV/nems/emc.nemspara/soft/miniconda3/bin:$PATH
@@ -36,6 +37,5 @@ else
   exit 1
 fi
 
-python rt_auto.py -m=$machine -w=$workdir -d
+python rt_auto.py -m=$machine -w=$workdir -a=$account -d
 
-exit 0
