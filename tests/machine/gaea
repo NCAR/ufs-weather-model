@@ -1,0 +1,16 @@
+  export PATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/bin:/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/bin:$PATH
+  export PYTHONPATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/lib/python3.8/site-packages
+  ECFLOW_START=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/bin/ecflow_start.sh
+  ECF_PORT=$(( $(id -u) + 1500 ))
+
+  DISKNM=/lustre/f2/pdata/ncep_shared/emc.nemspara/RT
+  QUEUE=normal
+  COMPILE_QUEUE=normal
+  PARTITION=c4
+  STMP=/lustre/f2/scratch
+  PTMP=/lustre/f2/scratch
+
+  SCHEDULER=slurm
+  cp fv3_conf/fv3_slurm.IN_gaea fv3_conf/fv3_slurm.IN
+  cp fv3_conf/compile_slurm.IN_gaea fv3_conf/compile_slurm.IN
+

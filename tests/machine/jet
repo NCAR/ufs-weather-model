@@ -1,0 +1,23 @@
+  module load rocoto/1.3.2
+  ROCOTORUN=$(which rocotorun)
+  ROCOTOSTAT=$(which rocotostat)
+  ROCOTOCOMPLETE=$(which rocotocomplete)
+  ROCOTO_SCHEDULER=slurm
+
+  export PATH=/lfs4/HFIP/hfv3gfs/software/miniconda3/4.8.3/envs/ufs-weather-model/bin:/lfs4/HFIP/hfv3gfs/software/miniconda3/4.8.3/bin:$PATH
+  export PYTHONPATH=/lfs4/HFIP/hfv3gfs/software/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/lfs4/HFIP/hfv3gfs/software/miniconda3/4.8.3/lib/python3.8/site-packages
+  module load ecflow
+  ECFLOW_START=/apps/ecflow/5.5.3/bin/ecflow_start.sh
+
+  QUEUE=batch
+  COMPILE_QUEUE=batch
+  PARTITION=xjet
+  DISKNM=/mnt/lfs4/HFIP/hfv3gfs/role.epic/RT
+  dprefix=${dprefix:-/lfs4/HFIP/$ACCNR/$USER}
+  STMP=${STMP:-$dprefix/RT_BASELINE}
+  PTMP=${PTMP:-$dprefix/RT_RUNDIRS}
+
+  SCHEDULER=slurm
+  cp fv3_conf/fv3_slurm.IN_jet fv3_conf/fv3_slurm.IN
+  cp fv3_conf/compile_slurm.IN_jet fv3_conf/compile_slurm.IN
+
