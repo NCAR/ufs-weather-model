@@ -23,7 +23,6 @@ usage() {
   echo "  -w  for weekly_test, skip comparing baseline results"
   echo "  -d  delete run directories that are not used by other tests"
   echo "  -p  platform (machine name)"
-  echo "  -z  specify working directory for regression test run"
   echo "  -s  specify sourced environment file in machine/ subdirectory (default is {platform})"
   echo
   set -x
@@ -200,9 +199,6 @@ while getopts "a:cl:mn:dz:krep:wh" opt; do
       ;;
     p)
       MACHINE_ID=$OPTARG
-      ;;
-    z)
-      dprefix=$OPTARG
       ;;
     s)
       sourcefile=$OPTARG
