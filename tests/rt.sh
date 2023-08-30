@@ -258,11 +258,12 @@ INPUTDATA_ROOT_BMIC=${INPUTDATA_ROOT_BMIC:-$DISKNM/NCAR/BM_IC-20220207}
 shift $((OPTIND-1))
 [[ $# -gt 1 ]] && usage
 
+NEW_BASELINE=${STMP}/${USER}/FV3_RT/REGRESSION_TEST
+
 if [[ $CREATE_BASELINE == true ]]; then
   #
   # prepare new regression test directory
   #
-  NEW_BASELINE=${STMP}/${USER}/FV3_RT/REGRESSION_TEST
   rm -rf "${NEW_BASELINE}"
   mkdir -p "${NEW_BASELINE}"
 fi
