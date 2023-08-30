@@ -1,0 +1,27 @@
+  module load rocoto
+  ROCOTORUN=$(which rocotorun)
+  ROCOTOSTAT=$(which rocotostat)
+  ROCOTOCOMPLETE=$(which rocotocomplete)
+  ROCOTO_SCHEDULER=slurm
+
+  PYTHONHOME=/scratch1/NCEPDEV/nems/emc.nemspara/soft/miniconda3_new_20210629
+  export PATH=$PYTHONHOME/bin:$PATH
+  export PYTHONPATH=$PYTHONHOME/lib/python3.7/site-packages
+
+  module load ecflow
+  ECFLOW_START=ecflow_start.sh
+
+  QUEUE=batch
+  COMPILE_QUEUE=batch
+
+  PARTITION=
+  INPUT_DATE=20230314
+  dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
+  DISKNM=$dprefix/RT
+  STMP=$dprefix/RT/stmp4
+  PTMP=$dprefix/RT/stmp2
+
+  SCHEDULER=slurm
+  cp fv3_conf/fv3_slurm.IN_hera fv3_conf/fv3_slurm.IN
+  cp fv3_conf/compile_slurm.IN_hera fv3_conf/compile_slurm.IN
+

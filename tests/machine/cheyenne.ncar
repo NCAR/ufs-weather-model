@@ -1,0 +1,18 @@
+  export PATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/bin:/glade/p/ral/jntp/tools/miniconda3/4.8.3/bin:$PATH
+  export PYTHONPATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/glade/p/ral/jntp/tools/miniconda3/4.8.3/lib/python3.8/site-packages
+  ECFLOW_START=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/bin/ecflow_start.sh
+  ECF_PORT=$(( $(id -u) + 1500 ))
+
+  QUEUE=regular
+  COMPILE_QUEUE=regular
+  PARTITION=
+  INPUT_DATE=20221101
+  dprefix=${dprefix:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/}
+  DISKNM=$dprefix/RT
+  STMP=$dprefix/RT
+  PTMP=$dprefix/RT
+  SCHEDULER=pbs
+  cp fv3_conf/fv3_qsub.IN_cheyenne fv3_conf/fv3_qsub.IN
+  cp fv3_conf/compile_qsub.IN_cheyenne fv3_conf/compile_qsub.IN
+
+

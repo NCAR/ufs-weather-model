@@ -1,0 +1,14 @@
+  export PYTHONPATH=
+  ECFLOW_START=
+  QUEUE=skx-normal
+  COMPILE_QUEUE=skx-dev
+  PARTITION=
+  dprefix=$SCRATCH/ufs-weather-model/run
+  DISKNM=/work2/07736/minsukji/stampede2/ufs-weather-model/RT
+  STMP=$dprefix
+  PTMP=$dprefix
+  SCHEDULER=slurm
+  MPIEXEC=ibrun
+  MPIEXECOPTS=
+  cp fv3_conf/fv3_slurm.IN_stampede fv3_conf/fv3_slurm.IN
+
