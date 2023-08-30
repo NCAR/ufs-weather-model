@@ -23,6 +23,7 @@ usage() {
   echo "  -w  for weekly_test, skip comparing baseline results"
   echo "  -d  delete run directories that are not used by other tests"
   echo "  -p  platform (machine name)"
+  echo "  -z  specify working directory for regression test run"
   echo
   set -x
   exit 1
@@ -141,7 +142,7 @@ TESTS_FILE='rt.conf'
 
 SKIP_ORDER=false
 
-while getopts "a:cl:mn:dw:krep:sh" opt; do
+while getopts "a:cl:mn:dz:krep:wh" opt; do
   case $opt in
     a)
       ACCNR=$OPTARG
@@ -182,7 +183,7 @@ while getopts "a:cl:mn:dw:krep:sh" opt; do
       export delete_rundir=true
       awk -F "|" '{print $5}' rt.conf | grep "\S" > keep_tests.tmp
       ;;
-    s)
+    w)
       export skip_check_results=true
       ;;
     k)
@@ -199,7 +200,7 @@ while getopts "a:cl:mn:dw:krep:sh" opt; do
     p)
       MACHINE_ID=$OPTARG
       ;;
-    w)
+    z)
       dprefix=$OPTARG
       ;;
     h)
