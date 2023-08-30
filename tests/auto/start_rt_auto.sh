@@ -3,8 +3,9 @@ set -eux
 
 function usage {
     set +x
-    echo "usage: $0 machine workdir"
+    echo "usage: $0 machine account workdir"
     echo "  machine: Name of current machine [hera/cheyenne]"
+    echo "  account: HPC account to charge"
     echo "  workdir: Working directory for checking out and running tests"
     exit 1
 }
