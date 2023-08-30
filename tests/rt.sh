@@ -228,10 +228,6 @@ fi
 
 source ${sourcefile:-"machine/$MACHINE_ID"}
 
-mkdir -p ${STMP}/${USER}
-
-NEW_BASELINE=${STMP}/${USER}/FV3_RT/REGRESSION_TEST
-
 # Overwrite default RUNDIR_ROOT if environment variable RUNDIR_ROOT is set
 RUNDIR_ROOT=${RUNDIR_ROOT:-${PTMP}/${USER}/FV3_RT}/rt_$$
 mkdir -p ${RUNDIR_ROOT}
@@ -266,6 +262,7 @@ if [[ $CREATE_BASELINE == true ]]; then
   #
   # prepare new regression test directory
   #
+  NEW_BASELINE=${STMP}/${USER}/FV3_RT/REGRESSION_TEST
   rm -rf "${NEW_BASELINE}"
   mkdir -p "${NEW_BASELINE}"
 fi
