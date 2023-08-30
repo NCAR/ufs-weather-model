@@ -7,7 +7,7 @@
   COMPILE_QUEUE=regular
   PARTITION=
   INPUT_DATE=20221101
-  dprefix=${dprefix:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/}
+  dprefix=${RUNDIR_ROOT:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/}
   DISKNM=$dprefix/RT
   STMP=$dprefix/RT
   PTMP=$dprefix/RT

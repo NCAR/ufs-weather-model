@@ -16,7 +16,7 @@
 
   PARTITION=
   INPUT_DATE=20230314
-  dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
+  dprefix=${RUNDIR_ROOT:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
   DISKNM=$dprefix/RT
   STMP=$dprefix/RT/stmp4
   PTMP=$dprefix/RT/stmp2
