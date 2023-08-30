@@ -23,7 +23,7 @@ usage() {
   echo "  -w  for weekly_test, skip comparing baseline results"
   echo "  -d  delete run directories that are not used by other tests"
   echo "  -p  platform (machine name)"
-  echo "  -s  specify sourced environment file in machine/ subdirectory (default is {platform})"
+  echo "  -s  specify sourced environment file (default is machine/\$platform)"
   echo
   set -x
   exit 1
@@ -142,7 +142,7 @@ TESTS_FILE='rt.conf'
 
 SKIP_ORDER=false
 
-while getopts "a:cl:mn:dz:krep:wh" opt; do
+while getopts "a:cl:mn:dz:krep:s:wh" opt; do
   case $opt in
     a)
       ACCNR=$OPTARG
