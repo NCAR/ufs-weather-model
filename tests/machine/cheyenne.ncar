@@ -12,6 +12,11 @@
   DISKNM=$dprefix/RT
   STMP=$dprefix/RT
   PTMP=$dprefix/RT
+  RTPWD=${RTPWD:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/baselines/main-${BL_DATE}/}
+  INPUTDATA_ROOT=${INPUTDATA_ROOT:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/input_data/${INPUT_DATE}/}
+  INPUTDATA_ROOT_BMIC=/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/baselines/BM_IC-20220207
+
+
   SCHEDULER=pbs
   cp fv3_conf/fv3_qsub.IN_cheyenne fv3_conf/fv3_qsub.IN
   cp fv3_conf/compile_qsub.IN_cheyenne fv3_conf/compile_qsub.IN
