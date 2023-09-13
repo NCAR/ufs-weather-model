@@ -20,7 +20,7 @@ def run_regression_test(job_obj, pr_repo_loc):
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.workdir} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -p {job_obj.machine}', pr_repo_loc]]
+                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -p {job_obj.machine} -s machine/{job_obj.machine}.ncar', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -38,7 +38,6 @@ def clone_pr_repo(job_obj):
     logger = logging.getLogger('RT/CLONE_PR_REPO')
     repo_name = job_obj.preq_dict['preq'].head.repo.name
     branch = job_obj.preq_dict['preq'].head.ref
-    #git_url = job_obj.preq_dict['preq'].head.repo.html_url.split('//')
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
@@ -67,8 +66,7 @@ def clone_pr_repo(job_obj):
 def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
     ''' This is the callback function associated with the "RT" command '''
     logger = logging.getLogger('RT/MOVE_RT_LOGS')
-    rt_log = f'tests/RegressionTests_{job_obj.machine}'\
-             f'.{job_obj.compiler}.log'
+    rt_log = f'tests/logs/RegressionTests_{job_obj.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
@@ -108,7 +106,7 @@ def process_logfile(job_obj, logfile):
     else:
         logger.critical(f'Could not find {job_obj.machine}'
                         f'.{job_obj.compiler} '
-                        f'{job_obj.preq_dict["action"]} log')
+                        f'{job_obj.preq_dict["action"]} log:\n{logfile}')
         print(f'Could not find {job_obj.machine}.{job_obj.compiler} '
-              f'{job_obj.preq_dict["action"]} log')
+              f'{job_obj.preq_dict["action"]} log:\n{logfile}')
         raise FileNotFoundError
