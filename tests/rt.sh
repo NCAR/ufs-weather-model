@@ -21,7 +21,8 @@ usage() {
   echo "  -n  run single test <name>"
   echo "  -r  use Rocoto workflow manager"
   echo "  -w  for weekly_test, skip comparing baseline results"
-  echo "  -d  delete run direcotries that are not used by other tests"
+  echo "  -d  delete run directories that are not used by other tests"
+  echo "  -p  platform (machine name)"
   echo
   set -x
   exit 1
@@ -127,7 +128,94 @@ fi
 
 readonly RT_SINGLE_CONF='rt_single.conf'
 
-source detect_machine.sh # Note: this does not set ACCNR. The "if" block below does.
+CREATE_BASELINE=false
+ROCOTO=false
+ECFLOW=false
+KEEP_RUNDIR=false
+SINGLE_NAME=''
+TEST_35D=false
+export skip_check_results=false
+export delete_rundir=false
+
+TESTS_FILE='rt.conf'
+
+SKIP_ORDER=false
+
+while getopts "a:cl:mn:dw:krep:sh" opt; do
+  case $opt in
+    a)
+      ACCNR=$OPTARG
+      ;;
+    c)
+      CREATE_BASELINE=true
+      ;;
+    l)
+      TESTS_FILE=$OPTARG
+      SKIP_ORDER=true
+      ;;
+    m)
+      # redefine RTPWD to point to newly created baseline outputs
+      RTPWD=${NEW_BASELINE}
+      ;;
+    n)
+      SINGLE_OPTS=("$OPTARG")
+      until [[ $(eval "echo \${$OPTIND}") =~ ^-.* ]] || [ -z $(eval "echo \${$OPTIND}") ]; do
+        SINGLE_OPTS+=($(eval "echo \${$OPTIND}"))
+        OPTIND=$((OPTIND + 1))
+      done
+
+      if [[ ${#SINGLE_OPTS[@]} != 2 ]]; then
+        echo "The -n option needs <testname> AND <compiler>, i.e. -n control_p8 intel"
+        exit 1
+      fi
+      SINGLE_NAME=${SINGLE_OPTS[0],,}
+      export RT_COMPILER=${SINGLE_OPTS[1],,}
+
+      if [[ "$RT_COMPILER" == "intel" ]] || [[ "$RT_COMPILER" == "gnu" ]]; then
+        echo "COMPILER set to ${RT_COMPILER}"
+      else
+        echo "Compiler must be either 'intel' or 'gnu'."
+        exit 1
+      fi
+      ;;
+    d)
+      export delete_rundir=true
+      awk -F "|" '{print $5}' rt.conf | grep "\S" > keep_tests.tmp
+      ;;
+    s)
+      export skip_check_results=true
+      ;;
+    k)
+      KEEP_RUNDIR=true
+      ;;
+    r)
+      ROCOTO=true
+      ECFLOW=false
+      ;;
+    e)
+      ECFLOW=true
+      ROCOTO=false
+      ;;
+    p)
+      MACHINE_ID=$OPTARG
+      ;;
+    w)
+      dprefix=$OPTARG
+      ;;
+    h)
+      usage
+      ;;
+    \?)
+      usage
+      die "Invalid option: -$OPTARG"
+      ;;
+    :)
+      usage
+      die "Option -$OPTARG requires an argument."
+      ;;
+  esac
+done
+
 source rt_utils.sh
 source module-setup.sh
 
@@ -303,10 +391,11 @@ elif [[ $MACHINE_ID = hera ]]; then
   COMPILE_QUEUE=batch
 
   PARTITION=
-  dprefix=/scratch1/NCEPDEV
-  DISKNM=$dprefix/nems/emc.nemspara/RT
-  STMP=$dprefix/stmp4
-  PTMP=$dprefix/stmp2
+  INPUT_DATE=20230314
+  dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
+  DISKNM=$dprefix/RT
+  STMP=$dprefix/RT/stmp4
+  PTMP=$dprefix/RT/stmp2
 
   SCHEDULER=slurm
 
@@ -392,10 +481,11 @@ elif [[ $MACHINE_ID = cheyenne ]]; then
   QUEUE=regular
   COMPILE_QUEUE=regular
   PARTITION=
-  dprefix=/glade/scratch
-  DISKNM=/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT
-  STMP=$dprefix
-  PTMP=$dprefix
+  INPUT_DATE=20221101
+  dprefix=${dprefix:-/glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/}
+  DISKNM=$dprefix/RT
+  STMP=$dprefix/RT
+  PTMP=$dprefix/RT
   SCHEDULER=pbs
 
 elif [[ $MACHINE_ID = stampede ]]; then
@@ -426,7 +516,7 @@ elif [[ $MACHINE_ID = expanse ]]; then
   PTMP=$dprefix
   SCHEDULER=slurm
 
- elif [[ $MACHINE_ID = noaacloud.* ]]; then
+elif [[ $MACHINE_ID = noaacloud.* ]]; then
 
   module use /apps/modules/modulefiles
   module load rocoto/1.3.3
@@ -467,7 +557,8 @@ if [[ $TESTS_FILE =~ '35d' ]] || [[ $TESTS_FILE =~ 'weekly' ]]; then
   TEST_35D=true
 fi
 
-source bl_date.conf
+source bl_date.ncar.conf
+INPUT_DATE=20230314
 
 if [[ "$RTPWD_NEW_BASELINE" == true ]] ; then
   RTPWD=${NEW_BASELINE}
@@ -476,9 +567,9 @@ else
 fi
 
 
-INPUTDATA_ROOT=${INPUTDATA_ROOT:-$DISKNM/NEMSfv3gfs/input-data-20221101}
+INPUTDATA_ROOT=${INPUTDATA_ROOT:-$DISKNM/../../input_data/${INPUT_DATE}}
 INPUTDATA_ROOT_WW3=${INPUTDATA_ROOT}/WW3_input_data_20220624
-INPUTDATA_ROOT_BMIC=${INPUTDATA_ROOT_BMIC:-$DISKNM/NEMSfv3gfs/BM_IC-20220207}
+INPUTDATA_ROOT_BMIC=${INPUTDATA_ROOT_BMIC:-$DISKNM/NCAR/BM_IC-20220207}
 
 shift $((OPTIND-1))
 [[ $# -gt 1 ]] && usage

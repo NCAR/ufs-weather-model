@@ -89,11 +89,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.ncar.sh -e -a {job_obj.account} -c -l rt_gnu.conf -p {job_obj.machine} -w {job_obj.workdir} -k',
+                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -c -l rt_gnu.conf -p {job_obj.machine} -w {job_obj.workdir} -k',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.ncar.sh -e -a {job_obj.account} -c -p {job_obj.machine} -w {job_obj.workdir} -k', pr_repo_loc]]
+                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -c -p {job_obj.machine} -w {job_obj.workdir} -k', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -158,7 +158,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, bl
 def get_bl_date(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/UPDATE_RT_NCAR_SH')
     BLDATEFOUND = False
-    with open(f'{pr_repo_loc}/tests/rt.ncar.sh', 'r') as f:
+    with open(f'{pr_repo_loc}/tests/rt.sh', 'r') as f:
         for line in f:
             if 'BL_DATE=' in line:
                 logger.info('Found BL_DATE in line')
@@ -176,7 +176,7 @@ def get_bl_date(job_obj, pr_repo_loc):
                     logger.info(f'Date {bldate} is not formatted YYYYMMDD')
                     raise ValueError
     if not BLDATEFOUND:
-        job_obj.comment_text_append('[BL] ERROR: Variable "BL_DATE" not found in rt.ncar.sh.')
+        job_obj.comment_text_append('[BL] ERROR: Variable "BL_DATE" not found in rt.sh.')
         job_obj.job_failed(logger, 'get_bl_date()')
     logger.info('Finished get_bl_date')
 

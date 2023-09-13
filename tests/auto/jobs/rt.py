@@ -16,11 +16,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     workflow_flag='-e'
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       f'&& /bin/bash --login ./rt.ncar.sh -e -l rt_gnu.conf -a {job_obj.account} -p {job_obj.machine} -w {job_obj.workdir}',
+                       f'&& /bin/bash --login ./rt.sh -e -l rt_gnu.conf -a {job_obj.account} -p {job_obj.machine} -w {job_obj.workdir}',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       f'&& /bin/bash --login ./rt.ncar.sh -e -a {job_obj.account} -p {job_obj.machine} -w {job_obj.workdir}', pr_repo_loc]]
+                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -p {job_obj.machine} -w {job_obj.workdir}', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
