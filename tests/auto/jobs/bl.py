@@ -141,8 +141,7 @@ def clone_pr_repo(job_obj, workdir):
 
 def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore):
     logger = logging.getLogger('BL/MOVE_RT_LOGS')
-    rt_log = f'tests/RegressionTests_{job_obj.machine}'\
-             f'.{job_obj.compiler}.log'
+    rt_log = f'tests/RegressionTests_{job_obj.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:

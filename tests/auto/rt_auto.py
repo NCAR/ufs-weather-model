@@ -185,7 +185,7 @@ class Job:
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
         self.logger.info(f'Removing Label: {self.preq_dict["label"]}')
-        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
+#        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
 
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
