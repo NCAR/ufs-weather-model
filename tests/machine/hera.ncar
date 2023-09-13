@@ -1,3 +1,6 @@
+  source bl_date.ncar.conf
+  INPUT_DATE=20230314
+
   module load rocoto
   ROCOTORUN=$(which rocotorun)
   ROCOTOSTAT=$(which rocotostat)
@@ -15,11 +18,12 @@
   COMPILE_QUEUE=batch
 
   PARTITION=
-  INPUT_DATE=20230314
   dprefix=${RUNDIR_ROOT:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
-  DISKNM=$dprefix/RT
-  STMP=$dprefix/RT/stmp4
-  PTMP=$dprefix/RT/stmp2
+  DISKNM=$dprefix/
+  STMP=$dprefix/stmp4
+  PTMP=$dprefix/stmp2
+  RTPWD=${RTPWD:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/baselines/main-${BL_DATE}/}
+  INPUTDATA_ROOT=${INPUTDATA_ROOT:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/input_data/${INPUT_DATE}/}
 
   SCHEDULER=slurm
   cp fv3_conf/fv3_slurm.IN_hera fv3_conf/fv3_slurm.IN

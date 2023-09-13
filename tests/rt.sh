@@ -241,15 +241,11 @@ if [[ $TESTS_FILE =~ '35d' ]] || [[ $TESTS_FILE =~ 'weekly' ]]; then
   TEST_35D=true
 fi
 
-source bl_date.ncar.conf
-INPUT_DATE=20230314
-
 if [[ "$RTPWD_NEW_BASELINE" == true ]] ; then
   RTPWD=${NEW_BASELINE}
 else
   RTPWD=${RTPWD:-$DISKNM/NEMSfv3gfs/develop-${BL_DATE}}
 fi
-
 
 INPUTDATA_ROOT=${INPUTDATA_ROOT:-$DISKNM/../../input_data/${INPUT_DATE}}
 INPUTDATA_ROOT_WW3=${INPUTDATA_ROOT}/WW3_input_data_20220624
