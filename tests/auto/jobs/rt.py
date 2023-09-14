@@ -15,12 +15,12 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('RT/RUN_REGRESSION_TEST')
     workflow_flag='-e'
     if job_obj.compiler == 'gnu':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.workdir} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -l rt_gnu.conf -a {job_obj.account} -p {job_obj.machine}',
+        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && cd tests '
+                       f'&& /bin/bash --login ./rt.sh -e -l rt_gnu.conf -a {job_obj.clargs.account} -p {job_obj.clargs.machine}',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.workdir} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -p {job_obj.machine} -s machine/{job_obj.machine}.ncar', pr_repo_loc]]
+        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && cd tests '
+                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine} -s machine/{job_obj.clargs.machine}.ncar -n control_p8 intel', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -41,7 +41,7 @@ def clone_pr_repo(job_obj):
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
-    repo_dir_str = f'{job_obj.workdir}/'\
+    repo_dir_str = f'{job_obj.clargs.workdir}/'\
                    f'{str(job_obj.preq_dict["preq"].id)}/'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}'
     pr_repo_loc = f'{repo_dir_str}/{repo_name}'
@@ -66,7 +66,7 @@ def clone_pr_repo(job_obj):
 def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
     ''' This is the callback function associated with the "RT" command '''
     logger = logging.getLogger('RT/MOVE_RT_LOGS')
-    rt_log = f'tests/logs/RegressionTests_{job_obj.machine}.log'
+    rt_log = f'tests/logs/RegressionTests_{job_obj.clargs.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
@@ -74,7 +74,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
         move_rt_commands = [
             [f'git pull --ff-only origin {branch}', pr_repo_loc],
             [f'git add {rt_log}', pr_repo_loc],
-            [f'git commit -m "[AutoRT] {job_obj.machine}'
+            [f'git commit -m "[AutoRT] {job_obj.clargs.machine}'
              f'.{job_obj.compiler} Job Completed.\n\n\n'
               'on-behalf-of @NCAR <kavulich@ucar.edu>"',
              pr_repo_loc],
@@ -104,9 +104,9 @@ def process_logfile(job_obj, logfile):
                     return rt_dir, True
         job_obj.job_failed(logger, f'{job_obj.preq_dict["action"]}')
     else:
-        logger.critical(f'Could not find {job_obj.machine}'
+        logger.critical(f'Could not find {job_obj.clargs.machine}'
                         f'.{job_obj.compiler} '
                         f'{job_obj.preq_dict["action"]} log:\n{logfile}')
-        print(f'Could not find {job_obj.machine}.{job_obj.compiler} '
+        print(f'Could not find {job_obj.clargs.machine}.{job_obj.compiler} '
               f'{job_obj.preq_dict["action"]} log:\n{logfile}')
         raise FileNotFoundError

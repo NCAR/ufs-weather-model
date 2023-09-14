@@ -18,26 +18,53 @@ def run(job_obj):
 
 def set_directories(job_obj):
     logger = logging.getLogger('BL/SET_DIRECTORIES')
-    if job_obj.machine == 'hera':
+    workdir = ''
+    blstore = ''
+    newbldir = ''
+    machine = job_obj.clargs.machine
+    if machine == 'hera':
         rt_dir = '/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/'
         blstore = f'{rt_dir}/baselines'
         newbldir = f'{rt_dir}/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
-    elif job_obj.machine == 'cheyenne':
+    elif machine == 'jet':
+        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
+        blstore = '/lfs4/HFIP/h-nems/emc.nemspara/RT/NEMSfv3gfs/'
+        rtbldir = '/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
+                 f'emc.nemspara/FV3_RT/REGRESSION_TEST_{job_obj.compiler.upper()}'
+    elif machine == 'gaea':
+        workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
+        blstore = '/lustre/f2/pdata/ncep_shared/emc.nemspara/RT/NEMSfv3gfs'
+        rtbldir = '/lustre/f2/scratch/emc.nemspara/FV3_RT/'\
+                 f'REGRESSION_TEST_{job_obj.compiler.upper()}'
+    elif machine == 'orion':
+        workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
+        blstore = '/work/noaa/nems/emc.nemspara/RT/NEMSfv3gfs'
+        rtbldir = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT/'\
+                 f'REGRESSION_TEST_{job_obj.compiler.upper()}'
+    elif machine == 'cheyenne':
         workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
         blstore = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/NCAR'
         newbldir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
-    else:
-        logger.critical(f'Machine {job_obj.machine} is not supported for this job')
-        raise KeyError
 
-    workdir = job_obj.workdir
+    if job_obj.clargs.workdir is not None:
+        workdir = job_obj.clargs.workdir
+    if job_obj.clargs.blstore is not None:
+        blstore = job_obj.clargs.blstore
+    if job_obj.clargs.newbldir is not None:
+        newbldir = job_obj.clargs.newbldir
 
-    logger.info(f'machine: {job_obj.machine}')
+    logger.info(f'machine: {machine}')
     logger.info(f'workdir: {workdir}')
     logger.info(f'blstore: {blstore}')
     logger.info(f'newbldir: {newbldir}')
+
+    if not workdir or not blstore or not newbldir:
+        logger.critical(f'One of workdir, blstore, or newbldir has not been specified')
+        logger.critical(f'Provide these on the command line or specify a supported machine')
+        raise KeyError
+
 
     return workdir, newbldir, blstore
 
@@ -89,11 +116,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -c -l rt_gnu.conf -p {job_obj.machine} -z {job_obj.workdir} -k',
+                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -l rt_gnu.conf -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.account} -c -p {job_obj.machine} -z {job_obj.workdir} -k', pr_repo_loc]]
+                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -141,7 +168,7 @@ def clone_pr_repo(job_obj, workdir):
 
 def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore):
     logger = logging.getLogger('BL/MOVE_RT_LOGS')
-    rt_log = f'tests/RegressionTests_{job_obj.machine}.log'
+    rt_log = f'tests/RegressionTests_{job_obj.clargs.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
