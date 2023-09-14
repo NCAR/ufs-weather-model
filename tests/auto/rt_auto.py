@@ -123,28 +123,29 @@ def delete_rt_dirs(in_dir, machine, workdir):
             logging.debug(f'{rt_dir}/{match} does not exist, not attempting to remove')
 
 
-def get_preqs_with_actions(repos, machine, account, workdir, ghinterface_obj, actions):
+def get_preqs_with_actions(repos, args, ghinterface_obj, actions):
     ''' Create list of dictionaries of a pull request
         and its machine label and action '''
     logger = logging.getLogger('GET_PREQS_WITH_ACTIONS')
+
     logger.info('Getting Pull Requests with Actions')
     gh_preqs = [ghinterface_obj.client.get_repo(repo['address'])
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
-    delete_pr_dirs(each_pr, machine, workdir)
+#    delete_pr_dirs(each_pr, args.machine, args.workdir)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
     jobs = []
     # return_preq = []
     for pr_label in preq_labels:
-        compiler, match = set_action_from_label(machine, actions,
+        compiler, match = set_action_from_label(args.machine, actions,
                                                 pr_label['label'])
         if match:
             pr_label['action'] = match
             # return_preq.append(pr_label.copy())
-            jobs.append(Job(pr_label.copy(), ghinterface_obj, machine, account, compiler, workdir))
+            jobs.append(Job(pr_label.copy(), ghinterface_obj, args, compiler))
 
     return jobs
 
@@ -166,16 +167,14 @@ class Job:
         provided by the bash script
     '''
 
-    def __init__(self, preq_dict, ghinterface_obj, machine, account, compiler, workdir):
+    def __init__(self, preq_dict, ghinterface_obj, args, compiler):
         self.logger = logging.getLogger('JOB')
         self.preq_dict = preq_dict
         self.job_mod = importlib.import_module(
                        f'jobs.{self.preq_dict["action"].lower()}')
         self.ghinterface_obj = ghinterface_obj
-        self.machine = machine
-        self.account = account
+        self.clargs = args
         self.compiler = compiler
-        self.workdir = workdir
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
 
@@ -190,7 +189,7 @@ class Job:
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
         # case of multiple jobs
-        label_to_check = f'{self.machine}'\
+        label_to_check = f'{self.clargs.machine}'\
                          f'-{self.compiler}'\
                          f'-{self.preq_dict["action"]}'
         labels = self.preq_dict['preq'].get_labels()
@@ -224,7 +223,7 @@ class Job:
     def run(self):
         logger = logging.getLogger('JOB/RUN')
         logger.info(f'Starting Job: {self.preq_dict["label"]}')
-        self.comment_text_append(newtext=f'Machine: {self.machine}')
+        self.comment_text_append(newtext=f'Machine: {self.clargs.machine}')
         self.comment_text_append(f'Compiler: {self.compiler}')
         self.comment_text_append(f'Job: {self.preq_dict["action"]}')
         if self.check_label_before_job_start():
@@ -245,7 +244,7 @@ class Job:
         logger.info(f'Comment Text: {self.comment_text}')
         self.comment_text_append('Please make changes and add '
                                  'the following label back: '
-                                 f'{self.machine}'
+                                 f'{self.clargs.machine}'
                                  f'-{self.compiler}'
                                  f'-{self.preq_dict["action"]}')
 
@@ -287,21 +286,16 @@ def main():
     parser.add_argument('-m','--machine', help='current machine name', required=True)
     parser.add_argument('-a','--account', help='account to charge', required=True)
     parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False)
+    parser.add_argument('-b','--baseline', help='directory where baseline data is stored', required=False)
+    parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', required=False)
     parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
 
     args = parser.parse_args()
-
-    machine = args.machine
-    account = args.account
-    workdir = args.workdir
 
     if args.debug:
         logger.info('Setting logging level to debug')
         for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
-
-    logger.info(f'Machine: {machine}')
-    logger.info(f'Working directory: {workdir}')
 
     # setup environment
     logger.info('Getting the environment setup')
@@ -315,8 +309,7 @@ def main():
     # and turn them into Job objects
     logger.info('Getting all pull requests, '
                 'labels and actions applicable to this machine.')
-    jobs = get_preqs_with_actions(repos, machine, account, workdir,
-                                       ghinterface_obj, actions)
+    jobs = get_preqs_with_actions(repos, args, ghinterface_obj, actions)
     [job.run() for job in jobs]
 
     logger.info('Script Finished')
