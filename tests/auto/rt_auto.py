@@ -235,7 +235,7 @@ class Job:
             except Exception:
                 self.job_failed(logger, 'run()')
                 logger.info('Sending comment text')
-                self.send_comment_text()
+#                self.send_comment_text()
         else:
             logger.info(f'Cannot find label {self.preq_dict["label"]}')
 
@@ -250,13 +250,15 @@ class Job:
 
         self.preq_dict['preq'].create_issue_comment(self.comment_text)
 
-    def job_failed(self, logger, job_name, exception=Exception, STDOUT=False,
+    def job_failed(self, logger, job_name, exception=None, STDOUT=False,
                    out=None, err=None):
-        logger.critical(f'{job_name} FAILED. Exception:{exception}')
+        logger.critical(f'{job_name} FAILED.')
 
         if STDOUT:
             logger.critical(f'STDOUT: {[item for item in out if not None]}')
             logger.critical(f'STDERR: {[eitem for eitem in err if not None]}')
+        if exception is not None:
+            raise
 
 def setup_env(name='ufs-weather-model', address='NCAR/ufs-weather-model', base='main'):
     # Dictionary of GitHub repositories to check
@@ -285,9 +287,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m','--machine', help='current machine name', required=True)
     parser.add_argument('-a','--account', help='account to charge', required=True)
-    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False)
-    parser.add_argument('-b','--baseline', help='directory where baseline data is stored', required=False)
-    parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', required=False)
+    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False, default='')
+    parser.add_argument('-b','--baseline', help='directory where baseline data is stored', required=False, default='')
+    parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', required=False, default='')
     parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
 
     args = parser.parse_args()

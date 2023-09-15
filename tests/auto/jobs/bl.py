@@ -7,66 +7,68 @@ from . import rt
 
 def run(job_obj):
     logger = logging.getLogger('BL/RUN')
-    workdir, newbldir, blstore = set_directories(job_obj)
+    workdir, new_baseline, blstore = set_directories(job_obj)
     pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj, workdir)
     bldate = get_bl_date(job_obj, pr_repo_loc)
     bldir = f'{blstore}/main-{bldate}/{job_obj.compiler.upper()}'
     bldirbool = check_for_bl_dir(bldir, job_obj)
     run_regression_test(job_obj, pr_repo_loc)
-    post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore)
+    post_process(job_obj, pr_repo_loc, repo_dir_str, new_baseline, bldir, bldate, blstore)
 
 
 def set_directories(job_obj):
     logger = logging.getLogger('BL/SET_DIRECTORIES')
     workdir = ''
     blstore = ''
-    newbldir = ''
+    new_baseline = ''
     machine = job_obj.clargs.machine
     if machine == 'hera':
-        rt_dir = '/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/'
-        blstore = f'{rt_dir}/baselines'
-        newbldir = f'{rt_dir}/FV3_RT/'\
+        rt_dir = '/scratch1/NCEPDEV/nems/emc.nemspara/'
+        workdir = f'{rt_dir}/autort/pr'
+        blstore = f'{rt_dir}/RT/NEMSfv3gfs'
+        new_baseline = f'{rt_dir}/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif machine == 'jet':
-        workdir = '/lfs4/HFIP/h-nems/emc.nemspara/autort/pr'
-        blstore = '/lfs4/HFIP/h-nems/emc.nemspara/RT/NEMSfv3gfs/'
-        rtbldir = '/lfs4/HFIP/h-nems/emc.nemspara/RT_BASELINE/'\
+        rt_dir = '/lfs4/HFIP/h-nems/emc.nemspara/'
+        workdir = f'{rt_dir}/autort/pr'
+        blstore = f'{rt_dir}/RT/NEMSfv3gfs'
+        new_baseline = '{rt_dir}/RT_BASELINE/'\
                  f'emc.nemspara/FV3_RT/REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif machine == 'gaea':
         workdir = '/lustre/f2/pdata/ncep/emc.nemspara/autort/pr'
         blstore = '/lustre/f2/pdata/ncep_shared/emc.nemspara/RT/NEMSfv3gfs'
-        rtbldir = '/lustre/f2/scratch/emc.nemspara/FV3_RT/'\
+        new_baseline = '/lustre/f2/scratch/emc.nemspara/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif machine == 'orion':
         workdir = '/work/noaa/nems/emc.nemspara/autort/pr'
         blstore = '/work/noaa/nems/emc.nemspara/RT/NEMSfv3gfs'
-        rtbldir = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT/'\
+        new_baseline = '/work/noaa/stmp/bcurtis/stmp/bcurtis/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif machine == 'cheyenne':
-        workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
-        blstore = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/NCAR'
-        newbldir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/'\
+        workdir = '/glade/scratch/dtcufsrt/autort/tests/auto/pr'
+        blstore = '/glade/p/ral/jntp/GMTB/ufs-weather-model/RT/NEMSfv3gfs'
+        new_baseline = '/glade/scratch/dtcufsrt/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
 
-    if job_obj.clargs.workdir is not None:
+    if job_obj.clargs.workdir:
         workdir = job_obj.clargs.workdir
-    if job_obj.clargs.blstore is not None:
-        blstore = job_obj.clargs.blstore
-    if job_obj.clargs.newbldir is not None:
-        newbldir = job_obj.clargs.newbldir
+    if job_obj.clargs.baseline:
+        blstore = job_obj.clargs.baseline
+    if job_obj.clargs.new_baseline:
+        new_baseline = job_obj.clargs.new_baseline
 
     logger.info(f'machine: {machine}')
     logger.info(f'workdir: {workdir}')
     logger.info(f'blstore: {blstore}')
-    logger.info(f'newbldir: {newbldir}')
+    logger.info(f'new_baseline: {new_baseline}')
 
-    if not workdir or not blstore or not newbldir:
-        logger.critical(f'One of workdir, blstore, or newbldir has not been specified')
+    if not workdir or not blstore or not new_baseline:
+        logger.critical(f'One of workdir, blstore, or new_baseline has not been specified')
         logger.critical(f'Provide these on the command line or specify a supported machine')
         raise KeyError
 
 
-    return workdir, newbldir, blstore
+    return workdir, new_baseline, blstore
 
 
 def check_for_bl_dir(bldir, job_obj):
@@ -89,38 +91,15 @@ def create_bl_dir(bldir, job_obj):
             raise FileNotFoundError
 
 
-#def get_bl_date(job_obj):
-#    logger = logging.getLogger('BL/GET_BL_DATE')
-#    for line in job_obj.preq_dict['preq'].body.splitlines():
-#        if 'BL_DATE:' in line:
-#            bldate = line
-#            bldate = bldate.replace('BL_DATE:', '')
-#            bldate = bldate.replace(' ', '')
-#            if len(bldate) != 8:
-#                print(f'Date: {bldate} is not formatted YYYYMMDD')
-#                raise ValueError
-#            logger.info(f'BL_DATE: {bldate}')
-#            bl_format = '%Y%m%d'
-#            try:
-#                datetime.datetime.strptime(bldate, bl_format)
-#            except ValueError:
-#                logger.info(f'Date {bldate} is not formatted YYYYMMDD')
-#                raise ValueError
-#            return bldate
-#    logger.critical('"BL_DATE:YYYYMMDD" needs to be in the PR body.'\
-#                    'On its own line. Stopping')
-#    raise ValueError
-
-
 def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -l rt_gnu.conf -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k',
+                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -l rt_gnu.conf -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k', pr_repo_loc]]
+        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && export NEW_BASELINE={job_obj.clargs.new_baseline} && cd tests '
+                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -s machine/{job_obj.clargs.machine}.ncar -n control_p8 intel -k', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -166,14 +145,14 @@ def clone_pr_repo(job_obj, workdir):
     return pr_repo_loc, repo_dir_str
 
 
-def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore):
+def post_process(job_obj, pr_repo_loc, repo_dir_str, new_baseline, bldir, bldate, blstore):
     logger = logging.getLogger('BL/MOVE_RT_LOGS')
-    rt_log = f'tests/RegressionTests_{job_obj.clargs.machine}.log'
+    rt_log = f'tests/logs/RegressionTests_{job_obj.clargs.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
         create_bl_dir(bldir, job_obj)
-        move_bl_command = [[f'mv {newbldir}/* {bldir}/', pr_repo_loc]]
+        move_bl_command = [[f'mv {new_baseline}/* {bldir}/', pr_repo_loc]]
         job_obj.run_commands(logger, move_bl_command)
         job_obj.comment_text_append('[BL] Baseline creation and move successful')
         logger.info('Starting RT Job')
@@ -184,15 +163,13 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, bl
 def get_bl_date(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/UPDATE_RT_NCAR_SH')
     BLDATEFOUND = False
-    with open(f'{pr_repo_loc}/tests/rt.sh', 'r') as f:
+    with open(f'{pr_repo_loc}/tests/bl_date.ncar.conf', 'r') as f:
         for line in f:
             if 'BL_DATE=' in line:
                 logger.info('Found BL_DATE in line')
                 BLDATEFOUND = True
-                bldate = line
+                bldate = line.split('=')[1].strip()
                 bldate = bldate.rstrip('\n')
-                bldate = bldate.replace('BL_DATE=', '')
-                bldate = bldate.strip(' ')
                 logger.info(f'bldate is "{bldate}"')
                 logger.info(f'Type bldate: {type(bldate)}')
                 bl_format = '%Y%m%d'
@@ -229,7 +206,6 @@ def process_logfile(job_obj, logfile):
         logger.critical(f'Log file exists but is not complete')
         job_obj.job_failed(logger, f'{job_obj.preq_dict["action"]}')
     else:
-        logger.critical(f'Could not find {job_obj.machine}'
-                        f'.{job_obj.compiler} '
-                        f'{job_obj.preq_dict["action"]} log')
+        logger.critical(f'Could not find {job_obj.clargs.machine}.{job_obj.compiler} '
+                        f'{job_obj.preq_dict["action"]} log: {logfile}')
         raise FileNotFoundError
