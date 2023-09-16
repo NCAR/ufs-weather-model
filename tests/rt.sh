@@ -226,6 +226,7 @@ if ! [ -f "$sourcefile" ]; then
   die "ERROR: Invalid source file, check that valid platform has been specified\n       and that source file '$sourcefile' exists"
 fi
 
+source bl_date.ncar.conf
 source ${sourcefile:-"machine/$MACHINE_ID"}
 
 # Overwrite default RUNDIR_ROOT if environment variable RUNDIR_ROOT is set

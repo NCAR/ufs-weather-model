@@ -1,4 +1,3 @@
-  source bl_date.ncar.conf
   INPUT_DATE=20230314
 
   module load rocoto
