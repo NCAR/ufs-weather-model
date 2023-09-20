@@ -1,0 +1,6 @@
+args:
+  machine: cheyenne
+  account: P48503002
+  workdir: /glade/p/ral/jntp/CCPP_regression_testing/NCAR_ufs-weather-model/run/
+  envfile: machine/cheyenne.ncar
+  additional_args: -n control_p8 intel
