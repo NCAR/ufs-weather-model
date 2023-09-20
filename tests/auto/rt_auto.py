@@ -236,6 +236,7 @@ class Job:
                 self.job_failed(logger, 'run()')
                 logger.info('Sending comment text')
 #                self.send_comment_text()
+                raise
         else:
             logger.info(f'Cannot find label {self.preq_dict["label"]}')
 
@@ -289,8 +290,10 @@ def main():
     parser.add_argument('-a','--account', help='account to charge', required=True)
     parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False, default='')
     parser.add_argument('-b','--baseline', help='directory where baseline data is stored', required=False, default='')
+    parser.add_argument('-e','--envfile', help='environment file sourced by rt.sh', required=False, default='')
     parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', required=False, default='')
     parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
+    parser.add_argument('--additional_args', help='Additional arguments to pass to rt.sh', required=False, default='')
 
     args = parser.parse_args()
 
