@@ -124,7 +124,7 @@ def delete_rt_dirs(in_dir, machine, workdir):
             logging.debug(f'{rt_dir}/{match} does not exist, not attempting to remove')
 
 
-def get_preqs_with_actions(repos, args, ghinterface_obj, actions):
+def get_preqs_with_actions(repos, args, ghinterface_obj, actions, git_cfg):
     ''' Create list of dictionaries of a pull request
         and its machine label and action '''
     logger = logging.getLogger('GET_PREQS_WITH_ACTIONS')
@@ -134,7 +134,7 @@ def get_preqs_with_actions(repos, args, ghinterface_obj, actions):
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
-#    delete_pr_dirs(each_pr, args.machine, args.workdir)
+    delete_pr_dirs(each_pr, args.machine, args.workdir)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
@@ -146,7 +146,7 @@ def get_preqs_with_actions(repos, args, ghinterface_obj, actions):
         if match:
             pr_label['action'] = match
             # return_preq.append(pr_label.copy())
-            jobs.append(Job(pr_label.copy(), ghinterface_obj, args, compiler))
+            jobs.append(Job(pr_label.copy(), ghinterface_obj, args, compiler, git_cfg))
 
     return jobs
 
@@ -168,7 +168,7 @@ class Job:
         provided by the bash script
     '''
 
-    def __init__(self, preq_dict, ghinterface_obj, args, compiler):
+    def __init__(self, preq_dict, ghinterface_obj, args, compiler, gitargs):
         self.logger = logging.getLogger('JOB')
         self.preq_dict = preq_dict
         self.job_mod = importlib.import_module(
@@ -176,6 +176,7 @@ class Job:
         self.ghinterface_obj = ghinterface_obj
         self.clargs = args
         self.compiler = compiler
+        self.gitargs = gitargs
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
 
@@ -262,12 +263,20 @@ class Job:
         if exception is not None:
             raise
 
-def setup_env(name='ufs-weather-model', address='NCAR/ufs-weather-model', base='main'):
+def setup_env(git_cfg):
     # Dictionary of GitHub repositories to check
+
+    if not git_cfg.get('repo'):
+        git_cfg['repo'] = 'ufs-weather-model'
+    if not git_cfg.get('org'):
+        git_cfg['org'] = 'ufs-community'
+    if not git_cfg.get('base'):
+        git_cfg['base'] = 'main'
+
     repo_dict = [{
-        'name': name,
-        'address': address,
-        'base': base
+        'name': git_cfg['repo'],
+        'address': f"{git_cfg['org']}/{git_cfg['repo']}",
+        'base': git_cfg['base']
     }]
 
     # Approved Actions
@@ -329,7 +338,7 @@ def main():
 
     # setup environment
     logger.info('Getting the environment setup')
-    repos, actions = setup_env()
+    repos, actions = setup_env(cfg['git']['github'])
 
     # setup interface with GitHub
     logger.info('Setting up GitHub interface.')
@@ -339,7 +348,7 @@ def main():
     # and turn them into Job objects
     logger.info('Getting all pull requests, '
                 'labels and actions applicable to this machine.')
-    jobs = get_preqs_with_actions(repos, args, ghinterface_obj, actions)
+    jobs = get_preqs_with_actions(repos, args, ghinterface_obj, actions, cfg['git'])
     [job.run() for job in jobs]
 
     logger.info('Script Finished')
