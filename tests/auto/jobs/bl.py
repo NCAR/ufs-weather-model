@@ -122,9 +122,6 @@ def clone_pr_repo(job_obj, workdir):
     logger = logging.getLogger('BL/CLONE_PR_REPO')
     repo_name = job_obj.preq_dict['preq'].head.repo.name
     branch = job_obj.preq_dict['preq'].head.ref
-    #git_url = job_obj.preq_dict['preq'].head.repo.html_url.split('//')
-    #git_url = f'{git_url[0]}//${{ghapitoken}}@{git_url[1]}'
-    #logger.debug(f'GIT URL: {git_url}')
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
@@ -138,9 +135,9 @@ def clone_pr_repo(job_obj, workdir):
         [f'git clone -b {branch} {git_ssh_url}', repo_dir_str],
         ['git submodule update --init --recursive',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.email "kavulich@ucar.edu"',
+        [f'git config user.email {job_obj.gitargs["config"]["user.email"]}',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.name "mkavulich"',
+        [f'git config user.name {job_obj.gitargs["config"]["user.name"]}',
          f'{repo_dir_str}/{repo_name}']
     ]
 

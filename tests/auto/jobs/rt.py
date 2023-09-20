@@ -55,9 +55,9 @@ def clone_pr_repo(job_obj):
         [f'git clone -b {branch} {git_ssh_url}', repo_dir_str],
         ['git submodule update --init --recursive',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.email "kavulich@ucar.edu"',
+        [f'git config user.email {job_obj.gitargs["config"]["user.email"]}',
          f'{repo_dir_str}/{repo_name}'],
-        ['git config user.name "mkavulich"',
+        [f'git config user.name job_obj.gitargs["config"]["user.name"]',
          f'{repo_dir_str}/{repo_name}']
     ]
 
@@ -80,7 +80,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
             [f'git add {rt_log}', pr_repo_loc],
             [f'git commit -m "[AutoRT] {job_obj.clargs.machine}'
              f'.{job_obj.compiler} Job Completed.\n\n\n'
-              'on-behalf-of @NCAR <kavulich@ucar.edu>"',
+              f'on-behalf-of {job_obj.gitargs["github"]["org"]} @{job_obj.gitargs["config"]["user.name"]}"',
              pr_repo_loc],
             ['sleep 10', pr_repo_loc],
             [f'git push origin {branch}', pr_repo_loc]
