@@ -93,14 +93,19 @@ def create_bl_dir(bldir, job_obj):
 
 def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
+
+    rt_command = 'cd tests'
+    rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
+    if job_obj.clargs.workdir:
+        rt_command += f' && export RUNDIR_ROOT={job_obj.clargs.workdir}'
+    rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -n control_p8 intel'
     if job_obj.compiler == 'gnu':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -l rt_gnu.conf -p {job_obj.clargs.machine} -z {job_obj.clargs.workdir} -k',
-                       pr_repo_loc]]
-    elif job_obj.compiler == 'intel':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && export NEW_BASELINE={job_obj.clargs.new_baseline} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -s machine/{job_obj.clargs.machine}.ncar -n control_p8 intel -k', pr_repo_loc]]
-    job_obj.run_commands(logger, rt_command)
+        rt_command += f' -l rt_gnu.conf'
+    if job_obj.clargs.envfile:
+        rt_command += f' -s {job_obj.clargs.envfile}'
+    rt_command += job_obj.clargs.additional_args
+
+    job_obj.run_commands(logger, [[rt_command, pr_repo_loc]])
 
 
 def remove_pr_data(job_obj, pr_repo_loc, repo_dir_str, rt_dir):

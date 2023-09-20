@@ -13,15 +13,22 @@ def run(job_obj):
 
 def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('RT/RUN_REGRESSION_TEST')
-    workflow_flag='-e'
+
+    rt_command = 'cd tests'
+    rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
+    if job_obj.clargs.workdir:
+        rt_command += f' && export RUNDIR_ROOT={job_obj.clargs.workdir}'
+    rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine} -n control_p8 intel'
     if job_obj.compiler == 'gnu':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -l rt_gnu.conf -a {job_obj.clargs.account} -p {job_obj.clargs.machine}',
-                       pr_repo_loc]]
-    elif job_obj.compiler == 'intel':
-        rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && export RUNDIR_ROOT={job_obj.clargs.workdir} && cd tests '
-                       f'&& /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine} -s machine/{job_obj.clargs.machine}.ncar -n control_p8 intel', pr_repo_loc]]
-    job_obj.run_commands(logger, rt_command)
+        rt_command += f' -l rt_gnu.conf'
+    if job_obj.clargs.envfile:
+        rt_command += f' -s {job_obj.clargs.envfile}'
+    rt_command += job_obj.clargs.additional_args
+
+    print(rt_command)
+    print(pr_repo_loc)
+
+    job_obj.run_commands(logger, [[rt_command, pr_repo_loc]])
 
 
 def remove_pr_data(job_obj, pr_repo_loc, repo_dir_str, rt_dir):
