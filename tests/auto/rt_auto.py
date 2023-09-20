@@ -16,6 +16,7 @@ from glob import glob
 import logging
 import importlib
 from shutil import rmtree
+import yaml
 
 class GHInterface:
     '''
@@ -286,21 +287,45 @@ def main():
     logger.info('Starting Script')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m','--machine', help='current machine name', required=True)
-    parser.add_argument('-a','--account', help='account to charge', required=True)
-    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False, default='')
-    parser.add_argument('-b','--baseline', help='directory where baseline data is stored', required=False, default='')
-    parser.add_argument('-e','--envfile', help='environment file sourced by rt.sh', required=False, default='')
-    parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', required=False, default='')
+    parser.add_argument('-m','--machine', help='current machine name', default='')
+    parser.add_argument('-a','--account', help='account to charge', default='')
+    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', default='')
+    parser.add_argument('-b','--baseline', help='directory where baseline data is stored', default='')
+    parser.add_argument('-e','--envfile', help='environment file sourced by rt.sh', default='')
+    parser.add_argument('--new_baseline', help='if creating a new baseline, directory where new baseline data is stored', default='')
+    parser.add_argument('-y','--yamlfile', help='yaml file to load additional arguments from', default='rt_auto.yaml')
     parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
-    parser.add_argument('--additional_args', help='Additional arguments to pass to rt.sh', required=False, default='')
+    parser.add_argument('--additional_args', help='Additional arguments to pass to rt.sh', default='')
 
     args = parser.parse_args()
+    # Get command-line arguments as a dictionary
+    dargs = vars(args)
+
+    # Load yamlfile for additional arguments
+    with open(args.yamlfile) as f:
+        cfg = yaml.safe_load(f)
+
+    # For each mandatory command-line argument, if not provided, check yaml file, and fail if not there either
+    mandatory = ['machine','account']
+    for md in mandatory:
+        if not dargs[md]:
+            if not cfg['args'].get(md):
+                raise argparse.ArgumentTypeError(f'"{md}" is a required argument; you must provide it via command line or yaml config file "{args.yamlfile}"')
+
+    # For each optional command-line argument, if it was not provided, attempt to get it from the yaml file
+    for arg in dargs:
+        if arg in mandatory:
+            pass
+        if not dargs[arg]:
+            if cfg['args'].get(arg):
+                logger.info(f"Reading argument from yaml file:\n{arg} = {cfg['args'][arg]}")
+                dargs[arg] = cfg['args'][arg]
 
     if args.debug:
         logger.info('Setting logging level to debug')
         for handler in logger.handlers:
             handler.setLevel(logging.DEBUG)
+
 
     # setup environment
     logger.info('Getting the environment setup')

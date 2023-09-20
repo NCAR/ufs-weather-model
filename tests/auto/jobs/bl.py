@@ -103,7 +103,7 @@ def run_regression_test(job_obj, pr_repo_loc):
         rt_command += f' -l rt_gnu.conf'
     if job_obj.clargs.envfile:
         rt_command += f' -s {job_obj.clargs.envfile}'
-    rt_command += job_obj.clargs.additional_args
+    rt_command += f' {job_obj.clargs.additional_args}'
 
     job_obj.run_commands(logger, [[rt_command, pr_repo_loc]])
 
