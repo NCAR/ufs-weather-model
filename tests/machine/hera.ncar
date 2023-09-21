@@ -1,5 +1,5 @@
   source bl_date.ncar.conf
-  INPUT_DATE=20230314
+  INPUT_DATE=20230920
 
   module load rocoto
   ROCOTORUN=$(which rocotorun)
