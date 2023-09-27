@@ -7,37 +7,39 @@ from . import rt
 
 def run(job_obj):
     logger = logging.getLogger('BL/RUN')
-    workdir, rtbldir, blstore = set_directories(job_obj)
+    workdir, newbldir, blstore = set_directories(job_obj)
     pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj, workdir)
     bldate = get_bl_date(job_obj, pr_repo_loc)
     bldir = f'{blstore}/main-{bldate}/{job_obj.compiler.upper()}'
     bldirbool = check_for_bl_dir(bldir, job_obj)
     run_regression_test(job_obj, pr_repo_loc)
-    post_process(job_obj, pr_repo_loc, repo_dir_str, rtbldir, bldir, bldate, blstore)
+    post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore)
 
 
 def set_directories(job_obj):
     logger = logging.getLogger('BL/SET_DIRECTORIES')
     if job_obj.machine == 'hera':
-        workdir = '/scratch1/BMC/gmtb/RT/auto_RT/Pull_Requests'
-        blstore = '/scratch1/BMC/gmtb/RT/NCAR'
-        rtbldir = '/scratch1/BMC/gmtb/RT/FV3_RT/'\
+        rt_dir = '/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model/'
+        blstore = f'{rt_dir}/baselines'
+        newbldir = f'{rt_dir}/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     elif job_obj.machine == 'cheyenne':
         workdir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/auto_RT/Pull_Requests'
         blstore = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/NCAR'
-        rtbldir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/'\
+        newbldir = '/glade/scratch/epicufsrt/GMTB/ufs-weather-model/RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
     else:
         logger.critical(f'Machine {job_obj.machine} is not supported for this job')
         raise KeyError
 
+    workdir = job_obj.workdir
+
     logger.info(f'machine: {job_obj.machine}')
     logger.info(f'workdir: {workdir}')
     logger.info(f'blstore: {blstore}')
-    logger.info(f'rtbldir: {rtbldir}')
+    logger.info(f'newbldir: {newbldir}')
 
-    return workdir, rtbldir, blstore
+    return workdir, newbldir, blstore
 
 
 def check_for_bl_dir(bldir, job_obj):
@@ -87,11 +89,11 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('BL/RUN_REGRESSION_TEST')
     if job_obj.compiler == 'gnu':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.ncar.sh -e -c -l rt_gnu.conf',
+                       '&& /bin/bash --login ./rt.ncar.sh -e -c -l rt_gnu.conf -p {job_obj.machine}',
                        pr_repo_loc]]
     elif job_obj.compiler == 'intel':
         rt_command = [[f'export RT_COMPILER="{job_obj.compiler}" && cd tests '
-                       '&& /bin/bash --login ./rt.ncar.sh -e -c', pr_repo_loc]]
+                       '&& /bin/bash --login ./rt.ncar.sh -e -c -p {job_obj.machine}', pr_repo_loc]]
     job_obj.run_commands(logger, rt_command)
 
 
@@ -137,7 +139,7 @@ def clone_pr_repo(job_obj, workdir):
     return pr_repo_loc, repo_dir_str
 
 
-def post_process(job_obj, pr_repo_loc, repo_dir_str, rtbldir, bldir, bldate, blstore):
+def post_process(job_obj, pr_repo_loc, repo_dir_str, newbldir, bldir, bldate, blstore):
     logger = logging.getLogger('BL/MOVE_RT_LOGS')
     rt_log = f'tests/RegressionTests_{job_obj.machine}'\
              f'.{job_obj.compiler}.log'
@@ -145,7 +147,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, rtbldir, bldir, bldate, bls
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
         create_bl_dir(bldir, job_obj)
-        move_bl_command = [[f'mv {rtbldir}/* {bldir}/', pr_repo_loc]]
+        move_bl_command = [[f'mv {newbldir}/* {bldir}/', pr_repo_loc]]
         job_obj.run_commands(logger, move_bl_command)
         job_obj.comment_text_append('[BL] Baseline creation and move successful')
         logger.info('Starting RT Job')

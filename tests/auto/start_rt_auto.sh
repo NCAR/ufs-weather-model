@@ -2,13 +2,14 @@
 set -eux
 
 function usage {
+    set +x
     echo "usage: $0 machine workdir"
     echo "  machine: Name of current machine [hera/cheyenne]"
     echo "  workdir: Working directory for checking out and running tests"
     exit 1
 }
 if [ "$#" -lt 2 ]; then
-    echo "Need to provide machine and working directory"
+    echo "Need to provide machine and workdir"
     usage
 fi
 
@@ -28,7 +29,6 @@ elif [[ $machine == gaea ]]; then
   export PATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/envs/ufs-weather-model/bin:$PATH
   export PYTHONPATH=/lustre/f2/pdata/esrl/gsd/contrib/miniconda3/4.8.3/lib/python3.8/site-packages
 elif [[ $machine == cheyenne ]]; then
-  export MACHINE_ID=cheyenne
   export PATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/bin:/glade/p/ral/jntp/tools/miniconda3/4.8.3/bin:$PATH
   export PYTHONPATH=/glade/p/ral/jntp/tools/miniconda3/4.8.3/envs/ufs-weather-model/lib/python3.8/site-packages:/glade/p/ral/jntp/tools/miniconda3/4.8.3/lib/python3.8/site-packages
 else
@@ -36,6 +36,6 @@ else
   exit 1
 fi
 
-python rt_auto.py -m=$machine -w=$workdir
+python rt_auto.py -m=$machine -w=$workdir -d
 
 exit 0
