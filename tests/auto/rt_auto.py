@@ -184,7 +184,7 @@ class Job:
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
         self.logger.info(f'Removing Label: {self.preq_dict["label"]}')
-#        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
+        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
 
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
@@ -228,14 +228,14 @@ class Job:
         self.comment_text_append(f'Job: {self.preq_dict["action"]}')
         if self.check_label_before_job_start():
             try:
-                logger.info('Calling remove_pr_label')
-                self.remove_pr_label()
+#                logger.info('Calling remove_pr_label')
+#                self.remove_pr_label()
                 logger.info('Calling Job to Run')
                 self.job_mod.run(self)
             except Exception:
                 self.job_failed(logger, 'run()')
                 logger.info('Sending comment text')
-#                self.send_comment_text()
+                self.send_comment_text()
         else:
             logger.info(f'Cannot find label {self.preq_dict["label"]}')
 
@@ -277,20 +277,25 @@ def main():
     # handle logging
     log_filename = f'rt_auto_'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.log'
-    #logging.basicConfig(filename=log_filename, filemode='w',
-    #                    level=logging.INFO)
     logging.basicConfig(filename=log_filename, filemode='w',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
     logger = logging.getLogger('MAIN')
     logger.info('Starting Script')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-m','--machine', help='current machine name', required=True)
-    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=True)
+    parser.add_argument('-w','--workdir', help='directory where tests will be staged and run', required=False)
+    parser.add_argument('-d','--debug', help='Set logging to more verbose output', action='store_true')
+
     args = parser.parse_args()
 
     machine = args.machine
     workdir = args.workdir
+
+    if args.debug:
+        logger.info('Setting logging level to debug')
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
 
     logger.info(f'Machine: {machine}')
     logger.info(f'Working directory: {workdir}')

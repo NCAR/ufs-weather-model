@@ -21,7 +21,8 @@ usage() {
   echo "  -n  run single test <name>"
   echo "  -r  use Rocoto workflow manager"
   echo "  -w  for weekly_test, skip comparing baseline results"
-  echo "  -d  delete run direcotries that are not used by other tests"
+  echo "  -d  delete run directories that are not used by other tests"
+  echo "  -p  platform (machine name)"
   echo
   set -x
   exit 1
@@ -127,7 +128,73 @@ fi
 
 readonly RT_SINGLE_CONF='rt_single.conf'
 
-source detect_machine.sh # Note: this does not set ACCNR. The "if" block below does.
+CREATE_BASELINE=false
+ROCOTO=false
+ECFLOW=false
+KEEP_RUNDIR=false
+SINGLE_NAME=''
+TEST_35D=false
+export skip_check_results=false
+export delete_rundir=false
+
+TESTS_FILE='rt.conf'
+
+while getopts ":cl:mn:dwkreh" opt; do
+  case $opt in
+    c)
+      CREATE_BASELINE=true
+      ;;
+    l)
+      TESTS_FILE=$OPTARG
+      ;;
+    m)
+      # redefine RTPWD to point to newly created baseline outputs
+      RTPWD=${NEW_BASELINE}
+      ;;
+    n)
+      SINGLE_NAME=$OPTARG
+      ;;
+    d)
+      export delete_rundir=true
+      awk -F "|" '{print $5}' rt.conf | grep "\S" > keep_tests.tmp
+      ;;
+    s)
+      export skip_check_results=true
+      ;;
+    k)
+      KEEP_RUNDIR=true
+      ;;
+    r)
+      ROCOTO=true
+      ECFLOW=false
+      ;;
+    e)
+      ECFLOW=true
+      ROCOTO=false
+      ;;
+    p)
+      MACHINE_ID=$OPTARG
+      ;;
+    w)
+      dprefix=$OPTARG
+      ;;
+    h)
+      usage
+      ;;
+    \?)
+      usage
+      die "Invalid option: -$OPTARG"
+      ;;
+    :)
+      usage
+      die "Option -$OPTARG requires an argument."
+      ;;
+  esac
+done
+
+# Default compiler "intel"
+export RT_COMPILER=${RT_COMPILER:-intel}
+
 source rt_utils.sh
 source module-setup.sh
 
@@ -304,7 +371,7 @@ elif [[ $MACHINE_ID = hera ]]; then
 
   ACCNR=gmtb
   PARTITION=
-  dprefix=/scratch1/BMC/gmtb
+  dprefix=${dprefix:-/scratch1/BMC/gmtb/CCPP_regression_testing/NCAR_ufs-weather-model}
   DISKNM=$dprefix/RT
   STMP=$dprefix/RT/stmp4
   PTMP=$dprefix/RT/stmp2
@@ -312,8 +379,6 @@ elif [[ $MACHINE_ID = hera ]]; then
   SCHEDULER=slurm
 
 elif [[ $MACHINE_ID = orion ]]; then
-
-  module load git/2.28.0
 
   module load gcc/8.3.0
 
@@ -428,7 +493,7 @@ elif [[ $MACHINE_ID = expanse ]]; then
   PTMP=$dprefix
   SCHEDULER=slurm
 
- elif [[ $MACHINE_ID = noaacloud.* ]]; then
+elif [[ $MACHINE_ID = noaacloud.* ]]; then
 
   module use /apps/modules/modulefiles
   module load rocoto/1.3.3
@@ -447,10 +512,16 @@ elif [[ $MACHINE_ID = expanse ]]; then
   PTMP=$dprefix/stmp2
   SCHEDULER=slurm
 
-
 else
   die "Unknown machine ID, please edit detect_machine.sh file"
 fi
+
+# If account is unspecified, assume the machine has a "nems"
+# accounting code.
+export ACCNR="${ACCNR:-nems}"
+
+# Display the machine and account
+echo "Machine: " $MACHINE_ID "    Account: " $ACCNR
 
 mkdir -p ${STMP}/${USER}
 
@@ -625,6 +696,13 @@ EOF
     QUEUE=regular
   else
     die "ecFlow is not supported on this machine $MACHINE_ID"
+  fi
+
+else
+
+  if [[ $MACHINE_ID = hera ]] && [[ $HOSTNAME = hecflow ]]; then
+    echo "ERROR: To run without using ECFlow on Hera, please do not use ecflow node."
+    exit 1
   fi
 
 fi
