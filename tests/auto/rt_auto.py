@@ -312,8 +312,13 @@ def main():
     dargs = vars(args)
 
     # Load yamlfile for additional arguments
-    with open(args.yamlfile) as f:
-        cfg = yaml.safe_load(f)
+    try:
+        with open(args.yamlfile) as f:
+            cfg = yaml.safe_load(f)
+    except FileNotFoundError:
+        logger.error(f'Could not find yaml config file {args.yamlfile}')
+        logger.error('See README.rt_auto.yaml for info on creating this file')
+        raise
 
     # For each mandatory command-line argument, if not provided, check yaml file, and fail if not there either
     mandatory = ['machine','account']

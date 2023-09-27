@@ -142,7 +142,7 @@ TESTS_FILE='rt.conf'
 
 SKIP_ORDER=false
 
-while getopts "a:cl:mn:dz:krep:s:wh" opt; do
+while getopts ":a:cl:mn:dkrep:s:wh" opt; do
   case $opt in
     a)
       ACCNR=$OPTARG
@@ -155,8 +155,7 @@ while getopts "a:cl:mn:dz:krep:s:wh" opt; do
       SKIP_ORDER=true
       ;;
     m)
-      # redefine RTPWD to point to newly created baseline outputs
-      RTPWD=${NEW_BASELINE}
+      RTPWD_NEW_BASELINE=true
       ;;
     n)
       SINGLE_OPTS=("$OPTARG")
@@ -217,6 +216,10 @@ while getopts "a:cl:mn:dz:krep:s:wh" opt; do
   esac
 done
 
+# If there are extra arguments, quit and print usage function
+shift $((OPTIND-1))
+[[ $# -gt 1 ]] && usage
+
 source rt_utils.sh
 source module-setup.sh
 
@@ -241,6 +244,8 @@ if [[ $TESTS_FILE =~ '35d' ]] || [[ $TESTS_FILE =~ 'weekly' ]]; then
   TEST_35D=true
 fi
 
+NEW_BASELINE=${NEW_BASELINE:-${STMP}/${USER}/FV3_RT/REGRESSION_TEST}
+
 if [[ "$RTPWD_NEW_BASELINE" == true ]] ; then
   RTPWD=${NEW_BASELINE}
 else
@@ -250,11 +255,6 @@ fi
 INPUTDATA_ROOT=${INPUTDATA_ROOT:-$DISKNM/NEMSfv3gfs/input-data-20221101}
 INPUTDATA_ROOT_WW3=${INPUTDATA_ROOT}/WW3_input_data_20220624
 INPUTDATA_ROOT_BMIC=${INPUTDATA_ROOT_BMIC:-$DISKNM/NEMSfv3gfs/BM_IC-20220207}
-
-shift $((OPTIND-1))
-[[ $# -gt 1 ]] && usage
-
-NEW_BASELINE=${NEW_BASELINE:-${STMP}/${USER}/FV3_RT/REGRESSION_TEST}
 
 if [[ $CREATE_BASELINE == true ]]; then
   #
