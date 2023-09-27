@@ -135,12 +135,12 @@ ECFLOW=false
 KEEP_RUNDIR=false
 SINGLE_NAME=''
 TEST_35D=false
+RTPWD_NEW_BASELINE=false
+SKIP_ORDER=false
 export skip_check_results=false
 export delete_rundir=false
 
 TESTS_FILE='rt.conf'
-
-SKIP_ORDER=false
 
 while getopts ":a:cl:mn:dkrep:s:wh" opt; do
   case $opt in
