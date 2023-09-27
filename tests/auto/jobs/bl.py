@@ -7,8 +7,8 @@ from . import rt
 
 def run(job_obj):
     logger = logging.getLogger('BL/RUN')
-    workdir, new_baseline, blstore = set_directories(job_obj)
-    pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj, workdir)
+    new_baseline, blstore = set_directories(job_obj)
+    pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj)
     bldate = get_bl_date(job_obj, pr_repo_loc)
     bldir = f'{blstore}/main-{bldate}/{job_obj.compiler.upper()}'
     bldirbool = check_for_bl_dir(bldir, job_obj)
@@ -50,25 +50,25 @@ def set_directories(job_obj):
         new_baseline = '/glade/scratch/dtcufsrt/FV3_RT/'\
                  f'REGRESSION_TEST_{job_obj.compiler.upper()}'
 
-    if job_obj.clargs.workdir:
-        workdir = job_obj.clargs.workdir
+    if not job_obj.clargs.workdir:
+        job_obj.workdir = workdir
     if job_obj.clargs.baseline:
         blstore = job_obj.clargs.baseline
     if job_obj.clargs.new_baseline:
         new_baseline = job_obj.clargs.new_baseline
 
     logger.info(f'machine: {machine}')
-    logger.info(f'workdir: {workdir}')
+    logger.info(f'workdir: {job_obj.workdir}')
     logger.info(f'blstore: {blstore}')
     logger.info(f'new_baseline: {new_baseline}')
 
-    if not workdir or not blstore or not new_baseline:
+    if not job_obj.workdir or not blstore or not new_baseline:
         logger.critical(f'One of workdir, blstore, or new_baseline has not been specified')
         logger.critical(f'Provide these on the command line or specify a supported machine')
         raise KeyError
 
 
-    return workdir, new_baseline, blstore
+    return new_baseline, blstore
 
 
 def check_for_bl_dir(bldir, job_obj):
@@ -96,8 +96,8 @@ def run_regression_test(job_obj, pr_repo_loc):
 
     rt_command = 'cd tests'
     rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
-    if job_obj.clargs.workdir:
-        rt_command += f' && export RUNDIR_ROOT={job_obj.clargs.workdir}'
+    if job_obj.workdir:
+        rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
     rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -n control_p8 intel'
     if job_obj.compiler == 'gnu':
         rt_command += f' -l rt_gnu.conf'
@@ -117,7 +117,7 @@ def remove_pr_data(job_obj, pr_repo_loc, repo_dir_str, rt_dir):
     job_obj.run_commands(logger, rm_command)
 
 
-def clone_pr_repo(job_obj, workdir):
+def clone_pr_repo(job_obj):
     ''' clone the GitHub pull request repo, via command line '''
     logger = logging.getLogger('BL/CLONE_PR_REPO')
     repo_name = job_obj.preq_dict['preq'].head.repo.name
@@ -125,7 +125,7 @@ def clone_pr_repo(job_obj, workdir):
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
-    repo_dir_str = f'{workdir}/'\
+    repo_dir_str = f'{job_obj.workdir}/'\
                    f'{str(job_obj.preq_dict["preq"].id)}/'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}'
     pr_repo_loc = f'{repo_dir_str}/{repo_name}'

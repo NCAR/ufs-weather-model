@@ -16,8 +16,8 @@ def run_regression_test(job_obj, pr_repo_loc):
 
     rt_command = 'cd tests'
     rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
-    if job_obj.clargs.workdir:
-        rt_command += f' && export RUNDIR_ROOT={job_obj.clargs.workdir}'
+    if job_obj.workdir:
+        rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
     rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine}'
     if job_obj.compiler == 'gnu':
         rt_command += f' -l rt_gnu.conf'
@@ -45,7 +45,7 @@ def clone_pr_repo(job_obj):
     git_ssh_url = job_obj.preq_dict['preq'].head.repo.ssh_url
     logger.debug(f'GIT SSH_URL: {git_ssh_url}')
     logger.info('Starting repo clone')
-    repo_dir_str = f'{job_obj.clargs.workdir}/'\
+    repo_dir_str = f'{job_obj.workdir}/'\
                    f'{str(job_obj.preq_dict["preq"].id)}/'\
                    f'{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}'
     pr_repo_loc = f'{repo_dir_str}/{repo_name}'
@@ -72,6 +72,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
     logger = logging.getLogger('RT/MOVE_RT_LOGS')
     rt_log = f'tests/logs/RegressionTests_{job_obj.clargs.machine}.log'
     filepath = f'{pr_repo_loc}/{rt_log}'
+    print(filepath)
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
         #if job_obj.preq_dict['preq'].maintainer_can_modify:
@@ -101,10 +102,12 @@ def process_logfile(job_obj, logfile):
             for line in f:
                 if all(x in line for x in fail_string_list):
                 # if 'FAIL' in line and 'Test' in line:
+                    print(f'[RT] Error: {line.rstrip(chr(10))}')
                     job_obj.comment_text_append(f'[RT] Error: {line.rstrip(chr(10))}')
                 elif 'working dir' in line and not rt_dir:
                     rt_dir = os.path.split(line.split()[-1])[0]
                 elif 'SUCCESSFUL' in line:
+                    print(rt_dir)
                     return rt_dir, True
         job_obj.job_failed(logger, f'{job_obj.preq_dict["action"]}')
     else:
