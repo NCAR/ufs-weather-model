@@ -179,6 +179,7 @@ class Job:
         self.gitargs = gitargs
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
+        self.workdir = args.workdir
 
     def comment_text_append(self, newtext):
         self.comment_text += f'{newtext}\n'
@@ -186,7 +187,7 @@ class Job:
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
         self.logger.info(f'Removing Label: {self.preq_dict["label"]}')
-#        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
+        self.preq_dict['preq'].remove_from_labels(self.preq_dict['label'])
 
     def check_label_before_job_start(self):
         # LETS Check the label still exists before the start of the job in the
@@ -237,7 +238,7 @@ class Job:
             except Exception:
                 self.job_failed(logger, 'run()')
                 logger.info('Sending comment text')
-#                self.send_comment_text()
+                self.send_comment_text()
                 raise
         else:
             logger.info(f'Cannot find label {self.preq_dict["label"]}')
@@ -260,8 +261,8 @@ class Job:
         if STDOUT:
             logger.critical(f'STDOUT: {[item for item in out if not None]}')
             logger.critical(f'STDERR: {[eitem for eitem in err if not None]}')
-        if exception is not None:
-            raise
+#        if exception is not None:
+#            raise
 
 def setup_env(git_cfg):
     # Dictionary of GitHub repositories to check
