@@ -98,6 +98,8 @@ def run_regression_test(job_obj, pr_repo_loc):
     rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
     if job_obj.workdir:
         rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
+    if job_obj.clargs.new_baseline:
+        rt_command += f' && export NEW_BASELINE={job_obj.clargs.new_baseline}'
     rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -n control_p8 intel'
     if job_obj.compiler == 'gnu':
         rt_command += f' -l rt_gnu.conf'
