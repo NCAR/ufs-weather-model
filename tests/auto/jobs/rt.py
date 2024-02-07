@@ -15,12 +15,9 @@ def run_regression_test(job_obj, pr_repo_loc):
     logger = logging.getLogger('RT/RUN_REGRESSION_TEST')
 
     rt_command = 'cd tests'
-    rt_command += f' && export RT_COMPILER="{job_obj.compiler}"'
     if job_obj.workdir:
         rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
     rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine}'
-    if job_obj.compiler == 'gnu':
-        rt_command += f' -l rt_gnu.conf'
     if job_obj.clargs.envfile:
         rt_command += f' -s {job_obj.clargs.envfile}'
     rt_command += f' {job_obj.clargs.additional_args}'
@@ -79,8 +76,7 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
         move_rt_commands = [
             [f'git pull --ff-only origin {branch}', pr_repo_loc],
             [f'git add {rt_log}', pr_repo_loc],
-            [f'git commit -m "[AutoRT] {job_obj.clargs.machine}'
-             f'.{job_obj.compiler} Job Completed.\n\n\n'
+            [f'git commit -m "[AutoRT] {job_obj.clargs.machine} Job Completed.\n\n\n'
               f'on-behalf-of {job_obj.gitargs["github"]["org"]} @{job_obj.gitargs["config"]["user.name"]}"',
              pr_repo_loc],
             ['sleep 10', pr_repo_loc],
@@ -110,9 +106,8 @@ def process_logfile(job_obj, logfile):
         job_obj.job_failed(logger, f'{job_obj.preq_dict["action"]}')
         return rt_dir, False
     else:
-        logger.critical(f'Could not find {job_obj.clargs.machine}'
-                        f'.{job_obj.compiler} '
+        logger.critical(f'Could not find {job_obj.clargs.machine} '
                         f'{job_obj.preq_dict["action"]} log:\n{logfile}')
-        print(f'Could not find {job_obj.clargs.machine}.{job_obj.compiler} '
+        print(f'Could not find {job_obj.clargs.machine} '
               f'{job_obj.preq_dict["action"]} log:\n{logfile}')
         raise FileNotFoundError
