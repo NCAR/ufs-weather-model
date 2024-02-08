@@ -130,7 +130,7 @@ def get_preqs_with_actions(repos, args, ghinterface_obj, actions, git_cfg):
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
-    delete_pr_dirs(each_pr, args.machine, args.workdir)
+#    delete_pr_dirs(each_pr, args.machine, args.workdir)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
@@ -208,7 +208,8 @@ class Job:
                 try:
                     out, err = output.communicate()
                     out = [] if not out else out.decode('utf8').split('\n')
-                    logger.info(out)
+                    for o in out:
+                        logger.info(out[o])
                 except Exception as e:
                     err = [] if not err else err.decode('utf8').split('\n')
                     self.job_failed(logger, f'Command {command}', exception=e,
@@ -250,7 +251,8 @@ class Job:
         logger.critical(f'{job_name} FAILED.')
 
         if STDOUT:
-            logger.critical(f'STDOUT: {[item for item in out if not None]}')
+            for o in out:
+                logger.critical(f'STDOUT: {o}')
             logger.critical(f'STDERR: {[eitem for eitem in err if not None]}')
 #        if exception is not None:
 #            raise
