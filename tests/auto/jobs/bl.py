@@ -11,7 +11,6 @@ def run(job_obj):
     pr_repo_loc, repo_dir_str = clone_pr_repo(job_obj)
     bldate = get_bl_date(job_obj, pr_repo_loc)
     bldir = f'{blstore}/main-{bldate}'
-#    bldirbool = check_for_bl_dir(bldir, job_obj)
     run_regression_test(job_obj, pr_repo_loc)
     post_process(job_obj, pr_repo_loc, repo_dir_str, new_baseline, bldir, bldate, blstore)
 
@@ -69,7 +68,8 @@ def set_directories(job_obj):
 
 def check_for_bl_dir(bldir, job_obj):
     logger = logging.getLogger('BL/CHECK_FOR_BL_DIR')
-    logger.info('Checking if baseline directory exists')
+    logger.info('Checking if baseline directory exists:')
+    logger.info(bldir)
     if os.path.exists(bldir):
         logger.critical(f'Baseline dir: {bldir} exists. It should not, yet.')
         job_obj.comment_text_append(f'[BL] ERROR: Baseline location exists before '
@@ -95,7 +95,7 @@ def run_regression_test(job_obj, pr_repo_loc):
         rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
     if job_obj.clargs.new_baseline:
         rt_command += f' && export NEW_BASELINE={job_obj.clargs.new_baseline}'
-    rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine} -n control_p8 intel'
+    rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -c -p {job_obj.clargs.machine}'
     if job_obj.clargs.envfile:
         rt_command += f' -s {job_obj.clargs.envfile}'
     rt_command += f' {job_obj.clargs.additional_args}'
@@ -148,13 +148,17 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, new_baseline, bldir, bldate
     filepath = f'{pr_repo_loc}/{rt_log}'
     rt_dir, logfile_pass = process_logfile(job_obj, filepath)
     if logfile_pass:
-        create_bl_dir(bldir, job_obj)
-        move_bl_command = [[f'mv {new_baseline}/* {bldir}/', pr_repo_loc]]
-        job_obj.run_commands(logger, move_bl_command)
-        job_obj.comment_text_append('[BL] Baseline creation and move successful')
+        job_obj.comment_text_append(f'***Baseline creation successful on {job_obj.clargs.machine}***')
         logger.info('Starting RT Job')
+        # Update baseline to newly created baseline, then run new test
+        logging.info(f"{job_obj.baseline=}")
+        logging.info(f"{job_obj.clargs.new_baseline=}")
+        job_obj.baseline = job_obj.clargs.new_baseline
         rt.run(job_obj)
         logger.info('Finished with RT Job')
+    else:
+        logger.critical(f'Baseline created but RT failed, see log files for details')
+        job_obj.job_failed(logger, f'{job_obj.preq_dict["action"]}')
 
 
 def get_bl_date(job_obj, pr_repo_loc):

@@ -174,9 +174,16 @@ class Job:
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
         self.workdir = args.workdir
+        self.baseline = args.baseline
 
     def comment_text_append(self, newtext):
         self.comment_text += f'{newtext}\n'
+
+    def comment_text_pop(self, position=0):
+        newcomment = self.comment_text.split("\n")
+        newcomment.pop(position)
+        print(newcomment)
+        self.comment_text = "\n".join(newcomment)
 
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''

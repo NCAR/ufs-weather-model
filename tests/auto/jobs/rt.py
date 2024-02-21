@@ -17,6 +17,8 @@ def run_regression_test(job_obj, pr_repo_loc):
     rt_command = 'cd tests'
     if job_obj.workdir:
         rt_command += f' && export RUNDIR_ROOT={job_obj.workdir}'
+    if job_obj.baseline:
+        rt_command += f' && export RTPWD={job_obj.baseline}'
     rt_command += f' && /bin/bash --login ./rt.sh -e -a {job_obj.clargs.account} -p {job_obj.clargs.machine}'
     if job_obj.clargs.envfile:
         rt_command += f' -s {job_obj.clargs.envfile}'
@@ -82,7 +84,10 @@ def post_process(job_obj, pr_repo_loc, repo_dir_str, branch):
             ['sleep 10', pr_repo_loc],
             [f'git push origin {branch}', pr_repo_loc]
         ]
-        job_obj.run_commands(logger, move_rt_commands)
+#        job_obj.run_commands(logger, move_rt_commands)
+        job_obj.comment_text_pop()
+        job_obj.comment_text_append(f'***Regression test successful on {job_obj.clargs.machine}!***')
+        job_obj.preq_dict['preq'].create_issue_comment(job_obj.comment_text)
     else:
         job_obj.comment_text_append(f'[RT] Log file shows failures.')
         job_obj.comment_text_append(f'[RT] Please obtain logs from {pr_repo_loc}')
