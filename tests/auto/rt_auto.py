@@ -215,8 +215,11 @@ class Job:
                 try:
                     out, err = output.communicate()
                     out = [] if not out else out.decode('utf8').split('\n')
-                    for o in out:
-                        logger.info(out[o])
+                    if isinstance(out, str)
+                        logger.info(out)
+                    else:
+                        for o in out:
+                            logger.info(out[o])
                 except Exception as e:
                     err = [] if not err else err.decode('utf8').split('\n')
                     self.job_failed(logger, f'Command {command}', exception=e,
