@@ -54,28 +54,24 @@ class GHInterface:
 
 def set_action_from_label(machine, actions, label):
     ''' Match the label that initiates a job with an action in the dict'''
-    # <machine>-<compiler>-<test> i.e. hera-gnu-RT
+    # <machine>-<test> i.e. hera-gnu-RT
     logger = logging.getLogger('MATCH_LABEL_WITH_ACTIONS')
     logger.info('Setting action from Label')
     split_label = label.name.split('-')
-    # Make sure it has three parts
-    if len(split_label) != 3:
+    # Make sure it has two parts
+    if len(split_label) != 2:
         return False, False
     # Break the parts into their variables
     label_machine = split_label[0]
-    label_compiler = split_label[1]
-    label_action = split_label[2]
+    label_action = split_label[1]
     # check machine name matches
     if not re.match(label_machine, machine):
-        return False, False
-    # Compiler must be intel or gnu
-    if not str(label_compiler) in ["intel", "gnu"]:
         return False, False
     action_match = next((action for action in actions
                          if re.match(action, label_action)), False)
 
-    logging.info(f'Compiler: {label_compiler}, Action: {action_match}')
-    return label_compiler, action_match
+    logging.info(f'Action: {action_match}')
+    return action_match
 
 def delete_pr_dirs(each_pr, machine, workdir):
     ids = [str(pr.id) for pr in each_pr]
@@ -134,19 +130,18 @@ def get_preqs_with_actions(repos, args, ghinterface_obj, actions, git_cfg):
                 .get_pulls(state='open', sort='created', base=repo['base'])
                 for repo in repos]
     each_pr = [preq for gh_preq in gh_preqs for preq in gh_preq]
-    delete_pr_dirs(each_pr, args.machine, args.workdir)
+#    delete_pr_dirs(each_pr, args.machine, args.workdir)
     preq_labels = [{'preq': pr, 'label': label} for pr in each_pr
                    for label in pr.get_labels()]
 
     jobs = []
     # return_preq = []
     for pr_label in preq_labels:
-        compiler, match = set_action_from_label(args.machine, actions,
-                                                pr_label['label'])
+        match = set_action_from_label(args.machine, actions, pr_label['label'])
         if match:
             pr_label['action'] = match
             # return_preq.append(pr_label.copy())
-            jobs.append(Job(pr_label.copy(), ghinterface_obj, args, compiler, git_cfg))
+            jobs.append(Job(pr_label.copy(), ghinterface_obj, args, git_cfg))
 
     return jobs
 
@@ -168,21 +163,27 @@ class Job:
         provided by the bash script
     '''
 
-    def __init__(self, preq_dict, ghinterface_obj, args, compiler, gitargs):
+    def __init__(self, preq_dict, ghinterface_obj, args, gitargs):
         self.logger = logging.getLogger('JOB')
         self.preq_dict = preq_dict
         self.job_mod = importlib.import_module(
                        f'jobs.{self.preq_dict["action"].lower()}')
         self.ghinterface_obj = ghinterface_obj
         self.clargs = args
-        self.compiler = compiler
         self.gitargs = gitargs
         self.comment_text = '***Automated RT Failure Notification***\n'
         self.failed_tests = []
         self.workdir = args.workdir
+        self.baseline = args.baseline
 
     def comment_text_append(self, newtext):
         self.comment_text += f'{newtext}\n'
+
+    def comment_text_pop(self, position=0):
+        newcomment = self.comment_text.split("\n")
+        newcomment.pop(position)
+        print(newcomment)
+        self.comment_text = "\n".join(newcomment)
 
     def remove_pr_label(self):
         ''' Removes the PR label that initiated the job run from PR '''
@@ -193,7 +194,6 @@ class Job:
         # LETS Check the label still exists before the start of the job in the
         # case of multiple jobs
         label_to_check = f'{self.clargs.machine}'\
-                         f'-{self.compiler}'\
                          f'-{self.preq_dict["action"]}'
         labels = self.preq_dict['preq'].get_labels()
         label_match = next((label for label in labels
@@ -215,7 +215,11 @@ class Job:
                 try:
                     out, err = output.communicate()
                     out = [] if not out else out.decode('utf8').split('\n')
-                    logger.info(out)
+                    if isinstance(out, str)
+                        logger.info(out)
+                    else:
+                        for o in out:
+                            logger.info(out[o])
                 except Exception as e:
                     err = [] if not err else err.decode('utf8').split('\n')
                     self.job_failed(logger, f'Command {command}', exception=e,
@@ -227,7 +231,6 @@ class Job:
         logger = logging.getLogger('JOB/RUN')
         logger.info(f'Starting Job: {self.preq_dict["label"]}')
         self.comment_text_append(newtext=f'Machine: {self.clargs.machine}')
-        self.comment_text_append(f'Compiler: {self.compiler}')
         self.comment_text_append(f'Job: {self.preq_dict["action"]}')
         if self.check_label_before_job_start():
             try:
@@ -249,7 +252,6 @@ class Job:
         self.comment_text_append('Please make changes and add '
                                  'the following label back: '
                                  f'{self.clargs.machine}'
-                                 f'-{self.compiler}'
                                  f'-{self.preq_dict["action"]}')
 
         self.preq_dict['preq'].create_issue_comment(self.comment_text)
@@ -259,7 +261,8 @@ class Job:
         logger.critical(f'{job_name} FAILED.')
 
         if STDOUT:
-            logger.critical(f'STDOUT: {[item for item in out if not None]}')
+            for o in out:
+                logger.critical(f'STDOUT: {o}')
             logger.critical(f'STDERR: {[eitem for eitem in err if not None]}')
 #        if exception is not None:
 #            raise
